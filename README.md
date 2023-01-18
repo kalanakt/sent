@@ -6,7 +6,7 @@ A Fast Telegram API for Lighweight bots
 To install this package, use pip:
 
 
-```
+```shell
 pip install tmwad
 ```
 
@@ -14,7 +14,7 @@ pip install tmwad
 
 Here is an example of how to use the package:
 
-```
+```py
 from tmwad.telegram import Telegram
 
 token = 'BOT_TOJJEN' # bot token from bot father
