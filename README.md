@@ -3,10 +3,11 @@
 A Fast Telegram API for Lighweight bots
 
 ## Installation
+
 To install this package, use pip:
 
 
-```shell
+```
 pip install tmwad
 ```
 
