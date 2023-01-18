@@ -26,7 +26,7 @@ bot.send_message(chatid, 'Hello, World!') # bot set message to chatid
 
 ## Documentation
 
-For more detailed information about how to use this package, please refer to the full documentation at: [link to documentation]
+For more detailed information about how to use this package, please refer to the full documentation at
 
 ## Contributing
 
