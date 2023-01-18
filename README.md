@@ -11,6 +11,7 @@ pip install tmwad
 ```
 
 ## Usage
+
 Here is an example of how to use the package:
 
 ```
@@ -23,14 +24,18 @@ bot = Telegram(token)
 bot.send_message(chatid, 'Hello, World!') # bot set message to chatid
 ```
 
-Documentation
+## Documentation
+
 For more detailed information about how to use this package, please refer to the full documentation at: [link to documentation]
 
-Contributing
+## Contributing
+
 We welcome contributions to this package. To contribute, please fork the repository, make your changes, and submit a pull request.
 
-License
+## License
+
 This package is open-sourced under the MIT license
 
-Issues
+## Issues
+
 If you encounter any issues or bugs, please open an issue in the issue tracker.
