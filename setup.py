@@ -9,4 +9,6 @@ setup(
     author='kalanakt',
     author_email='e19198@eng.pdn.ac.lk',
     description='A package for sending Telegram messages',
+    long_description=open('README.md', 'r').read(),
+    long_description_content_type='text/markdown',
 )
