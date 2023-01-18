@@ -11,4 +11,10 @@ setup(
     description='A package for sending Telegram messages',
     long_description=open('README.md', 'r').read(),
     long_description_content_type='text/markdown',
+    keywords='telegram api',
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+    ],
 )
