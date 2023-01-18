@@ -1,5 +1,11 @@
 from setuptools import setup, find_packages
 
+try:
+    import pypandoc
+    long_description = pypandoc.convert_file('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
+
 setup(
     name='tmwad',
     version='0.0.1',
@@ -9,8 +15,7 @@ setup(
     author='kalanakt',
     author_email='e19198@eng.pdn.ac.lk',
     description='A package for sending Telegram messages',
-    long_description=open('README.md', 'r').read(),
-    long_description_content_type='text/markdown',
+    long_description=long_description,
     keywords='telegram api',
     classifiers=[
         'Programming Language :: Python :: 3',
@@ -18,3 +23,6 @@ setup(
         'Operating System :: OS Independent',
     ],
 )
+
+# python setup.py sdist
+# twine upload dist/*
