@@ -8,5 +8,5 @@ setup(
     url='https://github.com/kalanakt/tmwad',
     author='kalanakt',
     author_email='e19198@eng.pdn.ac.lk',
-    description='A package for sending Telegram messages'
+    description='A package for sending Telegram messages',
 )
