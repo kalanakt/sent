@@ -1,4 +1,4 @@
-# TMWAD
+# sent
 
 A Fast Telegram API for Lighweight bots
 
@@ -8,7 +8,7 @@ To install this package, use pip:
 
 
 ```
-pip install tmwad
+pip install sent
 ```
 
 ## Usage
@@ -16,13 +16,15 @@ pip install tmwad
 Here is an example of how to use the package:
 
 ```py
-from tmwad.telegram import Telegram
+from sent.telegram import Telegram
 
 token = 'BOT_TOJJEN' # bot token from bot father
 chatid = 'CHAT_ID'  # chat id of user | group | channel
 
 bot = Telegram(token)
 bot.send_message(chatid, 'Hello, World!') # bot set message to chatid
+
+bot.start_polling()
 ```
 
 ## Documentation

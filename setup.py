@@ -1,28 +1,23 @@
 from setuptools import setup, find_packages
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert_file('README.md', 'rst')
-except(IOError, ImportError):
-    long_description = open('README.md').read()
+with open("readme.md", "r") as fh:
+    long_description = fh.read()
 
 setup(
-    name='tmwad',
-    version='0.0.1',
+    name='sent',
+    version='0.0.15',
     packages=find_packages(),
     install_requires=['requests'],
-    url='https://github.com/kalanakt/tmwad',
+    url='https://github.com/kalanakt/sent',
     author='kalanakt',
     author_email='e19198@eng.pdn.ac.lk',
     description='A package for sending Telegram messages',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     keywords='telegram api',
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-    ],
+    license='MIT',
 )
 
 # python setup.py sdist
+# python setup.py sdist bdist_wheel
 # twine upload dist/*
