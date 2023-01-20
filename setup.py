@@ -5,7 +5,7 @@ with open("readme.md", "r") as fh:
 
 setup(
     name='sent',
-    version='0.0.16',
+    version='0.0.18',
     packages=find_packages(),
     install_requires=['requests'],
     url='https://github.com/kalanakt/sent',

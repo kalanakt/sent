@@ -1,1 +1,0 @@
-from .sticker import Sticker
