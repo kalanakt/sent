@@ -22,9 +22,15 @@ token = 'BOT_TOJJEN' # bot token from bot father
 chatid = 'CHAT_ID'  # chat id of user | group | channel
 
 bot = Telegram(token)
-bot.send_message(chatid, 'Hello, World!') # bot set message to chatid
 
-bot.start_polling()
+bot.send_message(chatid, "Wow !!!")
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    bot.reply_to(message, "Howdy, how are you doing?", protect_content=True)
+
+
+bot.polling()
 ```
 
 ## Documentation
