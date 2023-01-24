@@ -8,11 +8,13 @@ import time
 import re
 import sys
 import six
+from pathlib import Path
+from importlib import import_module
 
-
-class Telegram:
-    def __init__(self, token, threaded=True, skip_pending=False):
+class Telegram():
+    def __init__(self, token, threaded=True, skip_pending=False, plugins: dict = None,):
         self.token = token
+        self.plugins = plugins
         self.update_listener = []
         self.skip_pending = skip_pending
 
@@ -36,7 +38,26 @@ class Telegram:
         self.threaded = threaded
         if self.threaded:
             self.worker_pool = util.ThreadPool()
+    
+    def load_plugins(self):
+        if self.plugins:
+            plugins = self.plugins.copy()
+        else:
+            return
+        root = plugins["root"]
+        for path in sorted(Path(root.replace(".", "/")).rglob("*.py")):
+            module_path = '.'.join(path.parent.parts + (path.stem,))
+            module = import_module(module_path)
 
+            for name in vars(module).keys():
+                try:
+                    for handler, group in getattr(module, name).handlers:
+                        if isinstance(handler) and isinstance(group, int):
+                            self.add_handler(handler, group)
+                            count += 1
+                except Exception:
+                    pass 
+                  
     def set_webhook(self, url=None, certificate=None):
         return api.set_webhook(self.token, url, certificate)
 
