@@ -1,0 +1,8 @@
+{
+  "flake8.args": [
+    "--ignore=E501,E402,E731,W503,C901,W291",
+    "--max-line-length=120",
+    "--exclude=venv,build,dist",
+    "--max-complexity=10"
+  ]
+}

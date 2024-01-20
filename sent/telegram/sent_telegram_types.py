@@ -7,16 +7,24 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 from abc import ABC
 
+from sent_telegram_util import (
+    chunks,
+    generate_random_token,
+    is_bytes,
+    is_dict,
+    is_pil_image,
+    is_string,
+    pil_image_to_file,
+)
+
 try:
     import ujson as json
 except ImportError:
     import json
 
-from sent.util import is_command, is_dict, is_string, is_bytes, chunks, generate_random_token, pil_image_to_file, is_pil_image
-
 DISABLE_KEYLEN_ERROR = False
 
-logger = logging.getLogger('TeleBot')
+logger = logging.getLogger("TeleBot")
 
 
 class JsonSerializable(object):
@@ -96,7 +104,7 @@ class JsonDeserializable(object):
 
     def __str__(self):
         d = {
-            x: y.__dict__ if hasattr(y, '__dict__') else y
+            x: y.__dict__ if hasattr(y, "__dict__") else y
             for x, y in self.__dict__.items()
         }
         return str(d)
@@ -108,9 +116,9 @@ class Update(JsonDeserializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#update
 
-    :param update_id: The update's unique identifier. Update identifiers start from a certain positive number and 
-        increase sequentially. This ID becomes especially handy if you're using webhooks, since it allows you to ignore 
-        repeated updates or to restore the correct update sequence, should they get out of order. If there are no new updates 
+    :param update_id: The update's unique identifier. Update identifiers start from a certain positive number and
+        increase sequentially. This ID becomes especially handy if you're using webhooks, since it allows you to ignore
+        repeated updates or to restore the correct update sequence, should they get out of order. If there are no new updates
         for at least a week, then identifier of the next update will be chosen randomly instead of sequentially.
     :type update_id: :obj:`int`
 
@@ -129,8 +137,8 @@ class Update(JsonDeserializable):
     :param inline_query: Optional. New incoming inline query
     :type inline_query: :class:`telebot.types.InlineQuery`
 
-    :param chosen_inline_result: Optional. The result of an inline query that was chosen by a user and sent to their chat 
-        partner. Please see our documentation on the feedback collecting for details on how to enable these updates for your 
+    :param chosen_inline_result: Optional. The result of an inline query that was chosen by a user and sent to their chat
+        partner. Please see our documentation on the feedback collecting for details on how to enable these updates for your
         bot.
     :type chosen_inline_result: :class:`telebot.types.ChosenInlineResult`
 
@@ -140,27 +148,27 @@ class Update(JsonDeserializable):
     :param shipping_query: Optional. New incoming shipping query. Only for invoices with flexible price
     :type shipping_query: :class:`telebot.types.ShippingQuery`
 
-    :param pre_checkout_query: Optional. New incoming pre-checkout query. Contains full information about 
+    :param pre_checkout_query: Optional. New incoming pre-checkout query. Contains full information about
         checkout
     :type pre_checkout_query: :class:`telebot.types.PreCheckoutQuery`
 
-    :param poll: Optional. New poll state. Bots receive only updates about stopped polls and polls, which are sent by the 
+    :param poll: Optional. New poll state. Bots receive only updates about stopped polls and polls, which are sent by the
         bot
     :type poll: :class:`telebot.types.Poll`
 
-    :param poll_answer: Optional. A user changed their answer in a non-anonymous poll. Bots receive new votes only in 
+    :param poll_answer: Optional. A user changed their answer in a non-anonymous poll. Bots receive new votes only in
         polls that were sent by the bot itself.
     :type poll_answer: :class:`telebot.types.PollAnswer`
 
-    :param my_chat_member: Optional. The bot's chat member status was updated in a chat. For private chats, this update 
+    :param my_chat_member: Optional. The bot's chat member status was updated in a chat. For private chats, this update
         is received only when the bot is blocked or unblocked by the user.
     :type my_chat_member: :class:`telebot.types.ChatMemberUpdated`
 
-    :param chat_member: Optional. A chat member's status was updated in a chat. The bot must be an administrator in the 
+    :param chat_member: Optional. A chat member's status was updated in a chat. The bot must be an administrator in the
         chat and must explicitly specify “chat_member” in the list of allowed_updates to receive these updates.
     :type chat_member: :class:`telebot.types.ChatMemberUpdated`
 
-    :param chat_join_request: Optional. A request to join the chat has been sent. The bot must have the 
+    :param chat_join_request: Optional. A request to join the chat has been sent. The bot must have the
         can_invite_users administrator right in the chat to receive these updates.
     :type chat_join_request: :class:`telebot.types.ChatJoinRequest`
 
@@ -168,36 +176,67 @@ class Update(JsonDeserializable):
     :rtype: :class:`telebot.types.Update`
 
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string, dict_copy=False)
-        update_id = obj['update_id']
-        message = Message.de_json(obj.get('message'))
-        edited_message = Message.de_json(obj.get('edited_message'))
-        channel_post = Message.de_json(obj.get('channel_post'))
-        edited_channel_post = Message.de_json(obj.get('edited_channel_post'))
-        inline_query = InlineQuery.de_json(obj.get('inline_query'))
+        update_id = obj["update_id"]
+        message = Message.de_json(obj.get("message"))
+        edited_message = Message.de_json(obj.get("edited_message"))
+        channel_post = Message.de_json(obj.get("channel_post"))
+        edited_channel_post = Message.de_json(obj.get("edited_channel_post"))
+        inline_query = InlineQuery.de_json(obj.get("inline_query"))
         chosen_inline_result = ChosenInlineResult.de_json(
-            obj.get('chosen_inline_result'))
-        callback_query = CallbackQuery.de_json(obj.get('callback_query'))
-        shipping_query = ShippingQuery.de_json(obj.get('shipping_query'))
+            obj.get("chosen_inline_result")
+        )
+        callback_query = CallbackQuery.de_json(obj.get("callback_query"))
+        shipping_query = ShippingQuery.de_json(obj.get("shipping_query"))
         pre_checkout_query = PreCheckoutQuery.de_json(
-            obj.get('pre_checkout_query'))
-        poll = Poll.de_json(obj.get('poll'))
-        poll_answer = PollAnswer.de_json(obj.get('poll_answer'))
-        my_chat_member = ChatMemberUpdated.de_json(obj.get('my_chat_member'))
-        chat_member = ChatMemberUpdated.de_json(obj.get('chat_member'))
+            obj.get("pre_checkout_query"))
+        poll = Poll.de_json(obj.get("poll"))
+        poll_answer = PollAnswer.de_json(obj.get("poll_answer"))
+        my_chat_member = ChatMemberUpdated.de_json(obj.get("my_chat_member"))
+        chat_member = ChatMemberUpdated.de_json(obj.get("chat_member"))
         chat_join_request = ChatJoinRequest.de_json(
-            obj.get('chat_join_request'))
-        return cls(update_id, message, edited_message, channel_post, edited_channel_post, inline_query,
-                   chosen_inline_result, callback_query, shipping_query, pre_checkout_query, poll, poll_answer,
-                   my_chat_member, chat_member, chat_join_request)
+            obj.get("chat_join_request"))
+        return cls(
+            update_id,
+            message,
+            edited_message,
+            channel_post,
+            edited_channel_post,
+            inline_query,
+            chosen_inline_result,
+            callback_query,
+            shipping_query,
+            pre_checkout_query,
+            poll,
+            poll_answer,
+            my_chat_member,
+            chat_member,
+            chat_join_request,
+        )
 
-    def __init__(self, update_id, message, edited_message, channel_post, edited_channel_post, inline_query,
-                 chosen_inline_result, callback_query, shipping_query, pre_checkout_query, poll, poll_answer,
-                 my_chat_member, chat_member, chat_join_request):
+    def __init__(
+        self,
+        update_id,
+        message,
+        edited_message,
+        channel_post,
+        edited_channel_post,
+        inline_query,
+        chosen_inline_result,
+        callback_query,
+        shipping_query,
+        pre_checkout_query,
+        poll,
+        poll_answer,
+        my_chat_member,
+        chat_member,
+        chat_join_request,
+    ):
         self.update_id = update_id
         self.message = message
         self.edited_message = edited_message
@@ -236,26 +275,36 @@ class ChatMemberUpdated(JsonDeserializable):
     :param new_chat_member: New information about the chat member
     :type new_chat_member: :class:`telebot.types.ChatMember`
 
-    :param invite_link: Optional. Chat invite link, which was used by the user to join the chat; for joining by invite 
+    :param invite_link: Optional. Chat invite link, which was used by the user to join the chat; for joining by invite
         link events only.
     :type invite_link: :class:`telebot.types.ChatInviteLink`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatMemberUpdated`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['chat'] = Chat.de_json(obj['chat'])
-        obj['from_user'] = User.de_json(obj.pop('from'))
-        obj['old_chat_member'] = ChatMember.de_json(obj['old_chat_member'])
-        obj['new_chat_member'] = ChatMember.de_json(obj['new_chat_member'])
-        obj['invite_link'] = ChatInviteLink.de_json(obj.get('invite_link'))
+        obj["chat"] = Chat.de_json(obj["chat"])
+        obj["from_user"] = User.de_json(obj.pop("from"))
+        obj["old_chat_member"] = ChatMember.de_json(obj["old_chat_member"])
+        obj["new_chat_member"] = ChatMember.de_json(obj["new_chat_member"])
+        obj["invite_link"] = ChatInviteLink.de_json(obj.get("invite_link"))
         return cls(**obj)
 
-    def __init__(self, chat, from_user, date, old_chat_member, new_chat_member, invite_link=None, **kwargs):
+    def __init__(
+        self,
+        chat,
+        from_user,
+        date,
+        old_chat_member,
+        new_chat_member,
+        invite_link=None,
+        **kwargs
+    ):
         self.chat: Chat = chat
         self.from_user: User = from_user
         self.date: int = date
@@ -278,7 +327,7 @@ class ChatMemberUpdated(JsonDeserializable):
         new: Dict = self.new_chat_member.__dict__
         dif = {}
         for key in new:
-            if key == 'user':
+            if key == "user":
                 continue
             if new[key] != old[key]:
                 dif[key] = [old[key], new[key]]
@@ -309,14 +358,15 @@ class ChatJoinRequest(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatJoinRequest`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['chat'] = Chat.de_json(obj['chat'])
-        obj['from_user'] = User.de_json(obj['from'])
-        obj['invite_link'] = ChatInviteLink.de_json(obj.get('invite_link'))
+        obj["chat"] = Chat.de_json(obj["chat"])
+        obj["from_user"] = User.de_json(obj["from"])
+        obj["invite_link"] = ChatInviteLink.de_json(obj.get("invite_link"))
         return cls(**obj)
 
     def __init__(self, chat, from_user, date, bio=None, invite_link=None, **kwargs):
@@ -345,29 +395,30 @@ class WebhookInfo(JsonDeserializable):
     :param ip_address: Optional. Currently used webhook IP address
     :type ip_address: :obj:`str`
 
-    :param last_error_date: Optional. Unix time for the most recent error that happened when trying to deliver an 
+    :param last_error_date: Optional. Unix time for the most recent error that happened when trying to deliver an
         update via webhook
     :type last_error_date: :obj:`int`
 
-    :param last_error_message: Optional. Error message in human-readable format for the most recent error that 
+    :param last_error_message: Optional. Error message in human-readable format for the most recent error that
         happened when trying to deliver an update via webhook
     :type last_error_message: :obj:`str`
 
-    :param last_synchronization_error_date: Optional. Unix time of the most recent error that happened when trying 
+    :param last_synchronization_error_date: Optional. Unix time of the most recent error that happened when trying
         to synchronize available updates with Telegram datacenters
     :type last_synchronization_error_date: :obj:`int`
 
-    :param max_connections: Optional. The maximum allowed number of simultaneous HTTPS connections to the webhook 
+    :param max_connections: Optional. The maximum allowed number of simultaneous HTTPS connections to the webhook
         for update delivery
     :type max_connections: :obj:`int`
 
-    :param allowed_updates: Optional. A list of update types the bot is subscribed to. Defaults to all update types 
+    :param allowed_updates: Optional. A list of update types the bot is subscribed to. Defaults to all update types
         except chat_member
     :type allowed_updates: :obj:`list` of :obj:`str`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.WebhookInfo`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -375,9 +426,19 @@ class WebhookInfo(JsonDeserializable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, url, has_custom_certificate, pending_update_count, ip_address=None,
-                 last_error_date=None, last_error_message=None, last_synchronization_error_date=None,
-                 max_connections=None, allowed_updates=None, **kwargs):
+    def __init__(
+        self,
+        url,
+        has_custom_certificate,
+        pending_update_count,
+        ip_address=None,
+        last_error_date=None,
+        last_error_message=None,
+        last_synchronization_error_date=None,
+        max_connections=None,
+        allowed_updates=None,
+        **kwargs
+    ):
         self.url = url
         self.has_custom_certificate = has_custom_certificate
         self.pending_update_count = pending_update_count
@@ -395,8 +456,8 @@ class User(JsonDeserializable, Dictionaryable, JsonSerializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#user
 
-    :param id: Unique identifier for this user or bot. This number may have more than 32 significant bits and some 
-        programming languages may have difficulty/silent defects in interpreting it. But it has at most 52 significant 
+    :param id: Unique identifier for this user or bot. This number may have more than 32 significant bits and some
+        programming languages may have difficulty/silent defects in interpreting it. But it has at most 52 significant
         bits, so a 64-bit integer or double-precision float type are safe for storing this identifier.
     :type id: :obj:`int`
 
@@ -424,7 +485,7 @@ class User(JsonDeserializable, Dictionaryable, JsonSerializable):
     :param can_join_groups: Optional. True, if the bot can be invited to groups. Returned only in getMe.
     :type can_join_groups: :obj:`bool`
 
-    :param can_read_all_group_messages: Optional. True, if privacy mode is disabled for the bot. Returned only in 
+    :param can_read_all_group_messages: Optional. True, if privacy mode is disabled for the bot. Returned only in
         getMe.
     :type can_read_all_group_messages: :obj:`bool`
 
@@ -434,6 +495,7 @@ class User(JsonDeserializable, Dictionaryable, JsonSerializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.User`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -441,9 +503,21 @@ class User(JsonDeserializable, Dictionaryable, JsonSerializable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, id, is_bot, first_name, last_name=None, username=None, language_code=None,
-                 can_join_groups=None, can_read_all_group_messages=None, supports_inline_queries=None,
-                 is_premium=None, added_to_attachment_menu=None, **kwargs):
+    def __init__(
+        self,
+        id,
+        is_bot,
+        first_name,
+        last_name=None,
+        username=None,
+        language_code=None,
+        can_join_groups=None,
+        can_read_all_group_messages=None,
+        supports_inline_queries=None,
+        is_premium=None,
+        added_to_attachment_menu=None,
+        **kwargs
+    ):
         self.id: int = id
         self.is_bot: bool = is_bot
         self.first_name: str = first_name
@@ -463,30 +537,33 @@ class User(JsonDeserializable, Dictionaryable, JsonSerializable):
         """
         full_name = self.first_name
         if self.last_name:
-            full_name += ' {0}'.format(self.last_name)
+            full_name += " {0}".format(self.last_name)
         return full_name
 
     def to_json(self):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        return {'id': self.id,
-                'is_bot': self.is_bot,
-                'first_name': self.first_name,
-                'last_name': self.last_name,
-                'username': self.username,
-                'language_code': self.language_code,
-                'can_join_groups': self.can_join_groups,
-                'can_read_all_group_messages': self.can_read_all_group_messages,
-                'supports_inline_queries': self.supports_inline_queries,
-                'is_premium': self.is_premium,
-                'added_to_attachment_menu': self.added_to_attachment_menu}
+        return {
+            "id": self.id,
+            "is_bot": self.is_bot,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "username": self.username,
+            "language_code": self.language_code,
+            "can_join_groups": self.can_join_groups,
+            "can_read_all_group_messages": self.can_read_all_group_messages,
+            "supports_inline_queries": self.supports_inline_queries,
+            "is_premium": self.is_premium,
+            "added_to_attachment_menu": self.added_to_attachment_menu,
+        }
 
 
 class GroupChat(JsonDeserializable):
     """
     :meta private:
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -505,8 +582,8 @@ class Chat(JsonDeserializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#chat
 
-    :param id: Unique identifier for this chat. This number may have more than 32 significant bits and some programming 
-        languages may have difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 
+    :param id: Unique identifier for this chat. This number may have more than 32 significant bits and some programming
+        languages may have difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed
         64-bit integer or double-precision float type are safe for storing this identifier.
     :type id: :obj:`int`
 
@@ -542,7 +619,7 @@ class Chat(JsonDeserializable):
     :param bio: Optional. Bio of the other party in a private chat. Returned only in getChat.
     :type bio: :obj:`str`
 
-    :param has_private_forwards: Optional. :obj:`bool`, if privacy settings of the other party in the private chat 
+    :param has_private_forwards: Optional. :obj:`bool`, if privacy settings of the other party in the private chat
         allows to use tg://user?id=<user_id> links only in chats with the user. Returned only in getChat.
     :type has_private_forwards: :obj:`bool`
 
@@ -550,33 +627,33 @@ class Chat(JsonDeserializable):
         in the private chat. Returned only in getChat.
     :type :obj:`bool`
 
-    :param join_to_send_messages: Optional. :obj:`bool`, if users need to join the supergroup before they can send 
+    :param join_to_send_messages: Optional. :obj:`bool`, if users need to join the supergroup before they can send
         messages. Returned only in getChat.
     :type join_to_send_messages: :obj:`bool`
 
-    :param join_by_request: Optional. :obj:`bool`, if all users directly joining the supergroup need to be approved 
+    :param join_by_request: Optional. :obj:`bool`, if all users directly joining the supergroup need to be approved
         by supergroup administrators. Returned only in getChat.
     :type join_by_request: :obj:`bool`
 
     :param description: Optional. Description, for groups, supergroups and channel chats. Returned only in getChat.
     :type description: :obj:`str`
 
-    :param invite_link: Optional. Primary invite link, for groups, supergroups and channel chats. Returned only in 
+    :param invite_link: Optional. Primary invite link, for groups, supergroups and channel chats. Returned only in
         getChat.
     :type invite_link: :obj:`str`
 
     :param pinned_message: Optional. The most recent pinned message (by sending date). Returned only in getChat.
     :type pinned_message: :class:`telebot.types.Message`
 
-    :param permissions: Optional. Default chat member permissions, for groups and supergroups. Returned only in 
+    :param permissions: Optional. Default chat member permissions, for groups and supergroups. Returned only in
         getChat.
     :type permissions: :class:`telebot.types.ChatPermissions`
 
-    :param slow_mode_delay: Optional. For supergroups, the minimum allowed delay between consecutive messages sent 
+    :param slow_mode_delay: Optional. For supergroups, the minimum allowed delay between consecutive messages sent
         by each unpriviledged user; in seconds. Returned only in getChat.
     :type slow_mode_delay: :obj:`int`
 
-    :param message_auto_delete_time: Optional. The time after which all messages sent to the chat will be 
+    :param message_auto_delete_time: Optional. The time after which all messages sent to the chat will be
         automatically deleted; in seconds. Returned only in getChat.
     :type message_auto_delete_time: :obj:`int`
 
@@ -588,54 +665,78 @@ class Chat(JsonDeserializable):
         getChat.
     :type has_hidden_members: :obj:`bool`
 
-    :param has_protected_content: Optional. :obj:`bool`, if messages from the chat can't be forwarded to other 
+    :param has_protected_content: Optional. :obj:`bool`, if messages from the chat can't be forwarded to other
         chats. Returned only in getChat.
     :type has_protected_content: :obj:`bool`
 
     :param sticker_set_name: Optional. For supergroups, name of group sticker set. Returned only in getChat.
     :type sticker_set_name: :obj:`str`
 
-    :param can_set_sticker_set: Optional. :obj:`bool`, if the bot can change the group sticker set. Returned only in 
+    :param can_set_sticker_set: Optional. :obj:`bool`, if the bot can change the group sticker set. Returned only in
         getChat.
     :type can_set_sticker_set: :obj:`bool`
 
-    :param linked_chat_id: Optional. Unique identifier for the linked chat, i.e. the discussion group identifier for 
-        a channel and vice versa; for supergroups and channel chats. This identifier may be greater than 32 bits and some 
-        programming languages may have difficulty/silent defects in interpreting it. But it is smaller than 52 bits, so a 
+    :param linked_chat_id: Optional. Unique identifier for the linked chat, i.e. the discussion group identifier for
+        a channel and vice versa; for supergroups and channel chats. This identifier may be greater than 32 bits and some
+        programming languages may have difficulty/silent defects in interpreting it. But it is smaller than 52 bits, so a
         signed 64 bit integer or double-precision float type are safe for storing this identifier. Returned only in getChat.
     :type linked_chat_id: :obj:`int`
 
-    :param location: Optional. For supergroups, the location to which the supergroup is connected. Returned only in 
+    :param location: Optional. For supergroups, the location to which the supergroup is connected. Returned only in
         getChat.
     :type location: :class:`telebot.types.ChatLocation`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Chat`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'photo' in obj:
-            obj['photo'] = ChatPhoto.de_json(obj['photo'])
-        if 'pinned_message' in obj:
-            obj['pinned_message'] = Message.de_json(obj['pinned_message'])
-        if 'permissions' in obj:
-            obj['permissions'] = ChatPermissions.de_json(obj['permissions'])
-        if 'location' in obj:
-            obj['location'] = ChatLocation.de_json(obj['location'])
+        if "photo" in obj:
+            obj["photo"] = ChatPhoto.de_json(obj["photo"])
+        if "pinned_message" in obj:
+            obj["pinned_message"] = Message.de_json(obj["pinned_message"])
+        if "permissions" in obj:
+            obj["permissions"] = ChatPermissions.de_json(obj["permissions"])
+        if "location" in obj:
+            obj["location"] = ChatLocation.de_json(obj["location"])
         return cls(**obj)
 
-    def __init__(self, id, type, title=None, username=None, first_name=None,
-                 last_name=None, photo=None, bio=None, has_private_forwards=None,
-                 description=None, invite_link=None, pinned_message=None,
-                 permissions=None, slow_mode_delay=None,
-                 message_auto_delete_time=None, has_protected_content=None, sticker_set_name=None,
-                 can_set_sticker_set=None, linked_chat_id=None, location=None,
-                 join_to_send_messages=None, join_by_request=None, has_restricted_voice_and_video_messages=None,
-                 is_forum=None, active_usernames=None, emoji_status_custom_emoji_id=None,
-                 has_hidden_members=None, has_aggressive_anti_spam_enabled=None, **kwargs):
+    def __init__(
+        self,
+        id,
+        type,
+        title=None,
+        username=None,
+        first_name=None,
+        last_name=None,
+        photo=None,
+        bio=None,
+        has_private_forwards=None,
+        description=None,
+        invite_link=None,
+        pinned_message=None,
+        permissions=None,
+        slow_mode_delay=None,
+        message_auto_delete_time=None,
+        has_protected_content=None,
+        sticker_set_name=None,
+        can_set_sticker_set=None,
+        linked_chat_id=None,
+        location=None,
+        join_to_send_messages=None,
+        join_by_request=None,
+        has_restricted_voice_and_video_messages=None,
+        is_forum=None,
+        active_usernames=None,
+        emoji_status_custom_emoji_id=None,
+        has_hidden_members=None,
+        has_aggressive_anti_spam_enabled=None,
+        **kwargs
+    ):
         self.id: int = id
         self.type: str = type
         self.title: str = title
@@ -648,7 +749,9 @@ class Chat(JsonDeserializable):
         self.join_to_send_messages: bool = join_to_send_messages
         self.join_by_request: bool = join_by_request
         self.has_private_forwards: bool = has_private_forwards
-        self.has_restricted_voice_and_video_messages: bool = has_restricted_voice_and_video_messages
+        self.has_restricted_voice_and_video_messages: bool = (
+            has_restricted_voice_and_video_messages
+        )
         self.description: str = description
         self.invite_link: str = invite_link
         self.pinned_message: Message = pinned_message
@@ -678,6 +781,7 @@ class MessageID(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.MessageId`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -698,7 +802,7 @@ class WebAppData(JsonDeserializable, Dictionaryable):
     :param data: The data. Be aware that a bad client can send arbitrary data in this field.
     :type data: :obj:`str`
 
-    :param button_text: Text of the web_app keyboard button from which the Web App was opened. Be aware that a bad client 
+    :param button_text: Text of the web_app keyboard button from which the Web App was opened. Be aware that a bad client
         can send arbitrary data in this field.
     :type button_text: :obj:`str`
 
@@ -711,7 +815,7 @@ class WebAppData(JsonDeserializable, Dictionaryable):
         self.button_text = button_text
 
     def to_dict(self):
-        return {'data': self.data, 'button_text': self.button_text}
+        return {"data": self.data, "button_text": self.button_text}
 
     @classmethod
     def de_json(cls, json_string):
@@ -733,13 +837,13 @@ class Message(JsonDeserializable):
     :param message_thread_id: Optional. Unique identifier of a message thread to which the message belongs; for supergroups only
     :type message_thread_id: :obj:`int`
 
-    :param from_user: Optional. Sender of the message; empty for messages sent to channels. For backward compatibility, the 
+    :param from_user: Optional. Sender of the message; empty for messages sent to channels. For backward compatibility, the
         field contains a fake sender user in non-channel chats, if the message was sent on behalf of a chat.
     :type from_user: :class:`telebot.types.User`
 
-    :param sender_chat: Optional. Sender of the message, sent on behalf of a chat. For example, the channel itself for 
-        channel posts, the supergroup itself for messages from anonymous group administrators, the linked channel for 
-        messages automatically forwarded to the discussion group. For backward compatibility, the field from contains a 
+    :param sender_chat: Optional. Sender of the message, sent on behalf of a chat. For example, the channel itself for
+        channel posts, the supergroup itself for messages from anonymous group administrators, the linked channel for
+        messages automatically forwarded to the discussion group. For backward compatibility, the field from contains a
         fake sender user in non-channel chats, if the message was sent on behalf of a chat.
     :type sender_chat: :class:`telebot.types.Chat`
 
@@ -752,19 +856,19 @@ class Message(JsonDeserializable):
     :param forward_from: Optional. For forwarded messages, sender of the original message
     :type forward_from: :class:`telebot.types.User`
 
-    :param forward_from_chat: Optional. For messages forwarded from channels or from anonymous administrators, 
+    :param forward_from_chat: Optional. For messages forwarded from channels or from anonymous administrators,
         information about the original sender chat
     :type forward_from_chat: :class:`telebot.types.Chat`
 
-    :param forward_from_message_id: Optional. For messages forwarded from channels, identifier of the original 
+    :param forward_from_message_id: Optional. For messages forwarded from channels, identifier of the original
         message in the channel
     :type forward_from_message_id: :obj:`int`
 
-    :param forward_signature: Optional. For forwarded messages that were originally sent in channels or by an 
+    :param forward_signature: Optional. For forwarded messages that were originally sent in channels or by an
         anonymous chat administrator, signature of the message sender if present
     :type forward_signature: :obj:`str`
 
-    :param forward_sender_name: Optional. Sender's name for messages forwarded from users who disallow adding a link 
+    :param forward_sender_name: Optional. Sender's name for messages forwarded from users who disallow adding a link
         to their account in forwarded messages
     :type forward_sender_name: :obj:`str`
 
@@ -774,11 +878,11 @@ class Message(JsonDeserializable):
     :param is_topic_message: Optional. True, if the message is sent to a forum topic
     :type is_topic_message: :obj:`bool`
 
-    :param is_automatic_forward: Optional. :obj:`bool`, if the message is a channel post that was automatically 
+    :param is_automatic_forward: Optional. :obj:`bool`, if the message is a channel post that was automatically
         forwarded to the connected discussion group
     :type is_automatic_forward: :obj:`bool`
 
-    :param reply_to_message: Optional. For replies, the original message. Note that the Message object in this field 
+    :param reply_to_message: Optional. For replies, the original message. Note that the Message object in this field
         will not contain further reply_to_message fields even if it itself is a reply.
     :type reply_to_message: :class:`telebot.types.Message`
 
@@ -794,18 +898,18 @@ class Message(JsonDeserializable):
     :param media_group_id: Optional. The unique identifier of a media message group this message belongs to
     :type media_group_id: :obj:`str`
 
-    :param author_signature: Optional. Signature of the post author for messages in channels, or the custom title of an 
+    :param author_signature: Optional. Signature of the post author for messages in channels, or the custom title of an
         anonymous group administrator
     :type author_signature: :obj:`str`
 
     :param text: Optional. For text messages, the actual UTF-8 text of the message
     :type text: :obj:`str`
 
-    :param entities: Optional. For text messages, special entities like usernames, URLs, bot commands, etc. that 
+    :param entities: Optional. For text messages, special entities like usernames, URLs, bot commands, etc. that
         appear in the text
     :type entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
-    :param animation: Optional. Message is an animation, information about the animation. For backward 
+    :param animation: Optional. Message is an animation, information about the animation. For backward
         compatibility, when this field is set, the document field will also be set
     :type animation: :class:`telebot.types.Animation`
 
@@ -833,7 +937,7 @@ class Message(JsonDeserializable):
     :param caption: Optional. Caption for the animation, audio, document, photo, video or voice
     :type caption: :obj:`str`
 
-    :param caption_entities: Optional. For messages with a caption, special entities like usernames, URLs, bot 
+    :param caption_entities: Optional. For messages with a caption, special entities like usernames, URLs, bot
         commands, etc. that appear in the caption
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -852,18 +956,18 @@ class Message(JsonDeserializable):
     :param poll: Optional. Message is a native poll, information about the poll
     :type poll: :class:`telebot.types.Poll`
 
-    :param venue: Optional. Message is a venue, information about the venue. For backward compatibility, when this 
+    :param venue: Optional. Message is a venue, information about the venue. For backward compatibility, when this
         field is set, the location field will also be set
     :type venue: :class:`telebot.types.Venue`
 
     :param location: Optional. Message is a shared location, information about the location
     :type location: :class:`telebot.types.Location`
 
-    :param new_chat_members: Optional. New members that were added to the group or supergroup and information about 
+    :param new_chat_members: Optional. New members that were added to the group or supergroup and information about
         them (the bot itself may be one of these members)
     :type new_chat_members: :obj:`list` of :class:`telebot.types.User`
 
-    :param left_chat_member: Optional. A member was removed from the group, information about them (this member may be 
+    :param left_chat_member: Optional. A member was removed from the group, information about them (this member may be
         the bot itself)
     :type left_chat_member: :class:`telebot.types.User`
 
@@ -879,44 +983,44 @@ class Message(JsonDeserializable):
     :param group_chat_created: Optional. Service message: the group has been created
     :type group_chat_created: :obj:`bool`
 
-    :param supergroup_chat_created: Optional. Service message: the supergroup has been created. This field can't be 
-        received in a message coming through updates, because bot can't be a member of a supergroup when it is created. It can 
+    :param supergroup_chat_created: Optional. Service message: the supergroup has been created. This field can't be
+        received in a message coming through updates, because bot can't be a member of a supergroup when it is created. It can
         only be found in reply_to_message if someone replies to a very first message in a directly created supergroup.
     :type supergroup_chat_created: :obj:`bool`
 
-    :param channel_chat_created: Optional. Service message: the channel has been created. This field can't be 
-        received in a message coming through updates, because bot can't be a member of a channel when it is created. It can only 
+    :param channel_chat_created: Optional. Service message: the channel has been created. This field can't be
+        received in a message coming through updates, because bot can't be a member of a channel when it is created. It can only
         be found in reply_to_message if someone replies to a very first message in a channel.
     :type channel_chat_created: :obj:`bool`
 
-    :param message_auto_delete_timer_changed: Optional. Service message: auto-delete timer settings changed in 
+    :param message_auto_delete_timer_changed: Optional. Service message: auto-delete timer settings changed in
         the chat
     :type message_auto_delete_timer_changed: :class:`telebot.types.MessageAutoDeleteTimerChanged`
 
-    :param migrate_to_chat_id: Optional. The group has been migrated to a supergroup with the specified identifier. 
-        This number may have more than 32 significant bits and some programming languages may have difficulty/silent 
-        defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or double-precision 
+    :param migrate_to_chat_id: Optional. The group has been migrated to a supergroup with the specified identifier.
+        This number may have more than 32 significant bits and some programming languages may have difficulty/silent
+        defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or double-precision
         float type are safe for storing this identifier.
     :type migrate_to_chat_id: :obj:`int`
 
-    :param migrate_from_chat_id: Optional. The supergroup has been migrated from a group with the specified 
-        identifier. This number may have more than 32 significant bits and some programming languages may have 
-        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or 
+    :param migrate_from_chat_id: Optional. The supergroup has been migrated from a group with the specified
+        identifier. This number may have more than 32 significant bits and some programming languages may have
+        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or
         double-precision float type are safe for storing this identifier.
     :type migrate_from_chat_id: :obj:`int`
 
-    :param pinned_message: Optional. Specified message was pinned. Note that the Message object in this field will not 
+    :param pinned_message: Optional. Specified message was pinned. Note that the Message object in this field will not
         contain further reply_to_message fields even if it is itself a reply.
     :type pinned_message: :class:`telebot.types.Message`
 
     :param invoice: Optional. Message is an invoice for a payment, information about the invoice. More about payments »
     :type invoice: :class:`telebot.types.Invoice`
 
-    :param successful_payment: Optional. Message is a service message about a successful payment, information about 
+    :param successful_payment: Optional. Message is a service message about a successful payment, information about
         the payment. More about payments »
     :type successful_payment: :class:`telebot.types.SuccessfulPayment`
 
-    :param connected_website: Optional. The domain name of the website on which the user has logged in. More about 
+    :param connected_website: Optional. The domain name of the website on which the user has logged in. More about
         Telegram Login »
     :type connected_website: :obj:`str`
 
@@ -927,7 +1031,7 @@ class Message(JsonDeserializable):
     :param passport_data: Optional. Telegram Passport data
     :type passport_data: :class:`telebot.types.PassportData`
 
-    :param proximity_alert_triggered: Optional. Service message. A user in the chat triggered another user's 
+    :param proximity_alert_triggered: Optional. Service message. A user in the chat triggered another user's
         proximity alert while sharing Live Location.
     :type proximity_alert_triggered: :class:`telebot.types.ProximityAlertTriggered`
 
@@ -964,228 +1068,248 @@ class Message(JsonDeserializable):
     :param web_app_data: Optional. Service message: data sent by a Web App
     :type web_app_data: :class:`telebot.types.WebAppData`
 
-    :param reply_markup: Optional. Inline keyboard attached to the message. login_url buttons are represented as 
+    :param reply_markup: Optional. Inline keyboard attached to the message. login_url buttons are represented as
         ordinary url buttons.
     :type reply_markup: :class:`telebot.types.InlineKeyboardMarkup`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Message`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string, dict_copy=False)
-        message_id = obj['message_id']
-        from_user = User.de_json(obj.get('from'))
-        date = obj['date']
-        chat = Chat.de_json(obj['chat'])
+        message_id = obj["message_id"]
+        from_user = User.de_json(obj.get("from"))
+        date = obj["date"]
+        chat = Chat.de_json(obj["chat"])
         content_type = None
         opts = {}
-        if 'sender_chat' in obj:
-            opts['sender_chat'] = Chat.de_json(obj['sender_chat'])
-        if 'forward_from' in obj:
-            opts['forward_from'] = User.de_json(obj['forward_from'])
-        if 'forward_from_chat' in obj:
-            opts['forward_from_chat'] = Chat.de_json(obj['forward_from_chat'])
-        if 'forward_from_message_id' in obj:
-            opts['forward_from_message_id'] = obj.get(
-                'forward_from_message_id')
-        if 'forward_signature' in obj:
-            opts['forward_signature'] = obj.get('forward_signature')
-        if 'forward_sender_name' in obj:
-            opts['forward_sender_name'] = obj.get('forward_sender_name')
-        if 'forward_date' in obj:
-            opts['forward_date'] = obj.get('forward_date')
-        if 'is_automatic_forward' in obj:
-            opts['is_automatic_forward'] = obj.get('is_automatic_forward')
-        if 'is_topic_message' in obj:
-            opts['is_topic_message'] = obj.get('is_topic_message')
-        if 'message_thread_id' in obj:
-            opts['message_thread_id'] = obj.get('message_thread_id')
-        if 'reply_to_message' in obj:
-            opts['reply_to_message'] = Message.de_json(obj['reply_to_message'])
-        if 'via_bot' in obj:
-            opts['via_bot'] = User.de_json(obj['via_bot'])
-        if 'edit_date' in obj:
-            opts['edit_date'] = obj.get('edit_date')
-        if 'has_protected_content' in obj:
-            opts['has_protected_content'] = obj.get('has_protected_content')
-        if 'media_group_id' in obj:
-            opts['media_group_id'] = obj.get('media_group_id')
-        if 'author_signature' in obj:
-            opts['author_signature'] = obj.get('author_signature')
-        if 'text' in obj:
-            opts['text'] = obj['text']
-            content_type = 'text'
-        if 'entities' in obj:
-            opts['entities'] = Message.parse_entities(obj['entities'])
-        if 'caption_entities' in obj:
-            opts['caption_entities'] = Message.parse_entities(
-                obj['caption_entities'])
-        if 'audio' in obj:
-            opts['audio'] = Audio.de_json(obj['audio'])
-            content_type = 'audio'
-        if 'document' in obj:
-            opts['document'] = Document.de_json(obj['document'])
-            content_type = 'document'
-        if 'animation' in obj:
+        if "sender_chat" in obj:
+            opts["sender_chat"] = Chat.de_json(obj["sender_chat"])
+        if "forward_from" in obj:
+            opts["forward_from"] = User.de_json(obj["forward_from"])
+        if "forward_from_chat" in obj:
+            opts["forward_from_chat"] = Chat.de_json(obj["forward_from_chat"])
+        if "forward_from_message_id" in obj:
+            opts["forward_from_message_id"] = obj.get(
+                "forward_from_message_id")
+        if "forward_signature" in obj:
+            opts["forward_signature"] = obj.get("forward_signature")
+        if "forward_sender_name" in obj:
+            opts["forward_sender_name"] = obj.get("forward_sender_name")
+        if "forward_date" in obj:
+            opts["forward_date"] = obj.get("forward_date")
+        if "is_automatic_forward" in obj:
+            opts["is_automatic_forward"] = obj.get("is_automatic_forward")
+        if "is_topic_message" in obj:
+            opts["is_topic_message"] = obj.get("is_topic_message")
+        if "message_thread_id" in obj:
+            opts["message_thread_id"] = obj.get("message_thread_id")
+        if "reply_to_message" in obj:
+            opts["reply_to_message"] = Message.de_json(obj["reply_to_message"])
+        if "via_bot" in obj:
+            opts["via_bot"] = User.de_json(obj["via_bot"])
+        if "edit_date" in obj:
+            opts["edit_date"] = obj.get("edit_date")
+        if "has_protected_content" in obj:
+            opts["has_protected_content"] = obj.get("has_protected_content")
+        if "media_group_id" in obj:
+            opts["media_group_id"] = obj.get("media_group_id")
+        if "author_signature" in obj:
+            opts["author_signature"] = obj.get("author_signature")
+        if "text" in obj:
+            opts["text"] = obj["text"]
+            content_type = "text"
+        if "entities" in obj:
+            opts["entities"] = Message.parse_entities(obj["entities"])
+        if "caption_entities" in obj:
+            opts["caption_entities"] = Message.parse_entities(
+                obj["caption_entities"])
+        if "audio" in obj:
+            opts["audio"] = Audio.de_json(obj["audio"])
+            content_type = "audio"
+        if "document" in obj:
+            opts["document"] = Document.de_json(obj["document"])
+            content_type = "document"
+        if "animation" in obj:
             # Document content type accompanies "animation",
             # so "animation" should be checked below "document" to override it
-            opts['animation'] = Animation.de_json(obj['animation'])
-            content_type = 'animation'
-        if 'game' in obj:
-            opts['game'] = Game.de_json(obj['game'])
-            content_type = 'game'
-        if 'photo' in obj:
-            opts['photo'] = Message.parse_photo(obj['photo'])
-            content_type = 'photo'
-        if 'sticker' in obj:
-            opts['sticker'] = Sticker.de_json(obj['sticker'])
-            content_type = 'sticker'
-        if 'video' in obj:
-            opts['video'] = Video.de_json(obj['video'])
-            content_type = 'video'
-        if 'video_note' in obj:
-            opts['video_note'] = VideoNote.de_json(obj['video_note'])
-            content_type = 'video_note'
-        if 'voice' in obj:
-            opts['voice'] = Audio.de_json(obj['voice'])
-            content_type = 'voice'
-        if 'caption' in obj:
-            opts['caption'] = obj['caption']
-        if 'contact' in obj:
-            opts['contact'] = Contact.de_json(json.dumps(obj['contact']))
-            content_type = 'contact'
-        if 'location' in obj:
-            opts['location'] = Location.de_json(obj['location'])
-            content_type = 'location'
-        if 'venue' in obj:
-            opts['venue'] = Venue.de_json(obj['venue'])
-            content_type = 'venue'
-        if 'dice' in obj:
-            opts['dice'] = Dice.de_json(obj['dice'])
-            content_type = 'dice'
-        if 'new_chat_members' in obj:
+            opts["animation"] = Animation.de_json(obj["animation"])
+            content_type = "animation"
+        if "game" in obj:
+            opts["game"] = Game.de_json(obj["game"])
+            content_type = "game"
+        if "photo" in obj:
+            opts["photo"] = Message.parse_photo(obj["photo"])
+            content_type = "photo"
+        if "sticker" in obj:
+            opts["sticker"] = Sticker.de_json(obj["sticker"])
+            content_type = "sticker"
+        if "video" in obj:
+            opts["video"] = Video.de_json(obj["video"])
+            content_type = "video"
+        if "video_note" in obj:
+            opts["video_note"] = VideoNote.de_json(obj["video_note"])
+            content_type = "video_note"
+        if "voice" in obj:
+            opts["voice"] = Audio.de_json(obj["voice"])
+            content_type = "voice"
+        if "caption" in obj:
+            opts["caption"] = obj["caption"]
+        if "contact" in obj:
+            opts["contact"] = Contact.de_json(json.dumps(obj["contact"]))
+            content_type = "contact"
+        if "location" in obj:
+            opts["location"] = Location.de_json(obj["location"])
+            content_type = "location"
+        if "venue" in obj:
+            opts["venue"] = Venue.de_json(obj["venue"])
+            content_type = "venue"
+        if "dice" in obj:
+            opts["dice"] = Dice.de_json(obj["dice"])
+            content_type = "dice"
+        if "new_chat_members" in obj:
             new_chat_members = []
-            for member in obj['new_chat_members']:
+            for member in obj["new_chat_members"]:
                 new_chat_members.append(User.de_json(member))
-            opts['new_chat_members'] = new_chat_members
-            content_type = 'new_chat_members'
-        if 'left_chat_member' in obj:
-            opts['left_chat_member'] = User.de_json(obj['left_chat_member'])
-            content_type = 'left_chat_member'
-        if 'new_chat_title' in obj:
-            opts['new_chat_title'] = obj['new_chat_title']
-            content_type = 'new_chat_title'
-        if 'new_chat_photo' in obj:
-            opts['new_chat_photo'] = Message.parse_photo(obj['new_chat_photo'])
-            content_type = 'new_chat_photo'
-        if 'delete_chat_photo' in obj:
-            opts['delete_chat_photo'] = obj['delete_chat_photo']
-            content_type = 'delete_chat_photo'
-        if 'group_chat_created' in obj:
-            opts['group_chat_created'] = obj['group_chat_created']
-            content_type = 'group_chat_created'
-        if 'supergroup_chat_created' in obj:
-            opts['supergroup_chat_created'] = obj['supergroup_chat_created']
-            content_type = 'supergroup_chat_created'
-        if 'channel_chat_created' in obj:
-            opts['channel_chat_created'] = obj['channel_chat_created']
-            content_type = 'channel_chat_created'
-        if 'migrate_to_chat_id' in obj:
-            opts['migrate_to_chat_id'] = obj['migrate_to_chat_id']
-            content_type = 'migrate_to_chat_id'
-        if 'migrate_from_chat_id' in obj:
-            opts['migrate_from_chat_id'] = obj['migrate_from_chat_id']
-            content_type = 'migrate_from_chat_id'
-        if 'pinned_message' in obj:
-            opts['pinned_message'] = Message.de_json(obj['pinned_message'])
-            content_type = 'pinned_message'
-        if 'invoice' in obj:
-            opts['invoice'] = Invoice.de_json(obj['invoice'])
-            content_type = 'invoice'
-        if 'successful_payment' in obj:
-            opts['successful_payment'] = SuccessfulPayment.de_json(
-                obj['successful_payment'])
-            content_type = 'successful_payment'
-        if 'connected_website' in obj:
-            opts['connected_website'] = obj['connected_website']
-            content_type = 'connected_website'
-        if 'poll' in obj:
-            opts['poll'] = Poll.de_json(obj['poll'])
-            content_type = 'poll'
-        if 'passport_data' in obj:
-            opts['passport_data'] = obj['passport_data']
-            content_type = 'passport_data'
-        if 'proximity_alert_triggered' in obj:
-            opts['proximity_alert_triggered'] = ProximityAlertTriggered.de_json(obj[
-                'proximity_alert_triggered'])
-            content_type = 'proximity_alert_triggered'
-        if 'video_chat_scheduled' in obj:
-            opts['video_chat_scheduled'] = VideoChatScheduled.de_json(
-                obj['video_chat_scheduled'])
+            opts["new_chat_members"] = new_chat_members
+            content_type = "new_chat_members"
+        if "left_chat_member" in obj:
+            opts["left_chat_member"] = User.de_json(obj["left_chat_member"])
+            content_type = "left_chat_member"
+        if "new_chat_title" in obj:
+            opts["new_chat_title"] = obj["new_chat_title"]
+            content_type = "new_chat_title"
+        if "new_chat_photo" in obj:
+            opts["new_chat_photo"] = Message.parse_photo(obj["new_chat_photo"])
+            content_type = "new_chat_photo"
+        if "delete_chat_photo" in obj:
+            opts["delete_chat_photo"] = obj["delete_chat_photo"]
+            content_type = "delete_chat_photo"
+        if "group_chat_created" in obj:
+            opts["group_chat_created"] = obj["group_chat_created"]
+            content_type = "group_chat_created"
+        if "supergroup_chat_created" in obj:
+            opts["supergroup_chat_created"] = obj["supergroup_chat_created"]
+            content_type = "supergroup_chat_created"
+        if "channel_chat_created" in obj:
+            opts["channel_chat_created"] = obj["channel_chat_created"]
+            content_type = "channel_chat_created"
+        if "migrate_to_chat_id" in obj:
+            opts["migrate_to_chat_id"] = obj["migrate_to_chat_id"]
+            content_type = "migrate_to_chat_id"
+        if "migrate_from_chat_id" in obj:
+            opts["migrate_from_chat_id"] = obj["migrate_from_chat_id"]
+            content_type = "migrate_from_chat_id"
+        if "pinned_message" in obj:
+            opts["pinned_message"] = Message.de_json(obj["pinned_message"])
+            content_type = "pinned_message"
+        if "invoice" in obj:
+            opts["invoice"] = Invoice.de_json(obj["invoice"])
+            content_type = "invoice"
+        if "successful_payment" in obj:
+            opts["successful_payment"] = SuccessfulPayment.de_json(
+                obj["successful_payment"]
+            )
+            content_type = "successful_payment"
+        if "connected_website" in obj:
+            opts["connected_website"] = obj["connected_website"]
+            content_type = "connected_website"
+        if "poll" in obj:
+            opts["poll"] = Poll.de_json(obj["poll"])
+            content_type = "poll"
+        if "passport_data" in obj:
+            opts["passport_data"] = obj["passport_data"]
+            content_type = "passport_data"
+        if "proximity_alert_triggered" in obj:
+            opts["proximity_alert_triggered"] = ProximityAlertTriggered.de_json(
+                obj["proximity_alert_triggered"]
+            )
+            content_type = "proximity_alert_triggered"
+        if "video_chat_scheduled" in obj:
+            opts["video_chat_scheduled"] = VideoChatScheduled.de_json(
+                obj["video_chat_scheduled"]
+            )
             # deprecated, for backward compatibility
-            opts['voice_chat_scheduled'] = opts['video_chat_scheduled']
-            content_type = 'video_chat_scheduled'
-        if 'video_chat_started' in obj:
-            opts['video_chat_started'] = VideoChatStarted.de_json(
-                obj['video_chat_started'])
+            opts["voice_chat_scheduled"] = opts["video_chat_scheduled"]
+            content_type = "video_chat_scheduled"
+        if "video_chat_started" in obj:
+            opts["video_chat_started"] = VideoChatStarted.de_json(
+                obj["video_chat_started"]
+            )
             # deprecated, for backward compatibility
-            opts['voice_chat_started'] = opts['video_chat_started']
-            content_type = 'video_chat_started'
-        if 'video_chat_ended' in obj:
-            opts['video_chat_ended'] = VideoChatEnded.de_json(
-                obj['video_chat_ended'])
+            opts["voice_chat_started"] = opts["video_chat_started"]
+            content_type = "video_chat_started"
+        if "video_chat_ended" in obj:
+            opts["video_chat_ended"] = VideoChatEnded.de_json(
+                obj["video_chat_ended"])
             # deprecated, for backward compatibility
-            opts['voice_chat_ended'] = opts['video_chat_ended']
-            content_type = 'video_chat_ended'
-        if 'video_chat_participants_invited' in obj:
-            opts['video_chat_participants_invited'] = VideoChatParticipantsInvited.de_json(
-                obj['video_chat_participants_invited'])
+            opts["voice_chat_ended"] = opts["video_chat_ended"]
+            content_type = "video_chat_ended"
+        if "video_chat_participants_invited" in obj:
+            opts[
+                "video_chat_participants_invited"
+            ] = VideoChatParticipantsInvited.de_json(
+                obj["video_chat_participants_invited"]
+            )
             # deprecated, for backward compatibility
-            opts['voice_chat_participants_invited'] = opts['video_chat_participants_invited']
-            content_type = 'video_chat_participants_invited'
-        if 'web_app_data' in obj:
-            opts['web_app_data'] = WebAppData.de_json(obj['web_app_data'])
-            content_type = 'web_app_data'
-        if 'message_auto_delete_timer_changed' in obj:
-            opts['message_auto_delete_timer_changed'] = MessageAutoDeleteTimerChanged.de_json(
-                obj['message_auto_delete_timer_changed'])
-            content_type = 'message_auto_delete_timer_changed'
-        if 'reply_markup' in obj:
-            opts['reply_markup'] = InlineKeyboardMarkup.de_json(
-                obj['reply_markup'])
-        if 'forum_topic_created' in obj:
-            opts['forum_topic_created'] = ForumTopicCreated.de_json(
-                obj['forum_topic_created'])
-            content_type = 'forum_topic_created'
-        if 'forum_topic_closed' in obj:
-            opts['forum_topic_closed'] = ForumTopicClosed.de_json(
-                obj['forum_topic_closed'])
-            content_type = 'forum_topic_closed'
-        if 'forum_topic_reopened' in obj:
-            opts['forum_topic_reopened'] = ForumTopicReopened.de_json(
-                obj['forum_topic_reopened'])
-            content_type = 'forum_topic_reopened'
-        if 'has_media_spoiler' in obj:
-            opts['has_media_spoiler'] = obj['has_media_spoiler']
-        if 'forum_topic_edited' in obj:
-            opts['forum_topic_edited'] = ForumTopicEdited.de_json(
-                obj['forum_topic_edited'])
-            content_type = 'forum_topic_edited'
-        if 'general_forum_topic_hidden' in obj:
-            opts['general_forum_topic_hidden'] = GeneralForumTopicHidden.de_json(
-                obj['general_forum_topic_hidden'])
-            content_type = 'general_forum_topic_hidden'
-        if 'general_forum_topic_unhidden' in obj:
-            opts['general_forum_topic_unhidden'] = GeneralForumTopicUnhidden.de_json(
-                obj['general_forum_topic_unhidden'])
-            content_type = 'general_forum_topic_unhidden'
-        if 'write_access_allowed' in obj:
-            opts['write_access_allowed'] = WriteAccessAllowed.de_json(
-                obj['write_access_allowed'])
-            content_type = 'write_access_allowed'
+            opts["voice_chat_participants_invited"] = opts[
+                "video_chat_participants_invited"
+            ]
+            content_type = "video_chat_participants_invited"
+        if "web_app_data" in obj:
+            opts["web_app_data"] = WebAppData.de_json(obj["web_app_data"])
+            content_type = "web_app_data"
+        if "message_auto_delete_timer_changed" in obj:
+            opts[
+                "message_auto_delete_timer_changed"
+            ] = MessageAutoDeleteTimerChanged.de_json(
+                obj["message_auto_delete_timer_changed"]
+            )
+            content_type = "message_auto_delete_timer_changed"
+        if "reply_markup" in obj:
+            opts["reply_markup"] = InlineKeyboardMarkup.de_json(
+                obj["reply_markup"])
+        if "forum_topic_created" in obj:
+            opts["forum_topic_created"] = ForumTopicCreated.de_json(
+                obj["forum_topic_created"]
+            )
+            content_type = "forum_topic_created"
+        if "forum_topic_closed" in obj:
+            opts["forum_topic_closed"] = ForumTopicClosed.de_json(
+                obj["forum_topic_closed"]
+            )
+            content_type = "forum_topic_closed"
+        if "forum_topic_reopened" in obj:
+            opts["forum_topic_reopened"] = ForumTopicReopened.de_json(
+                obj["forum_topic_reopened"]
+            )
+            content_type = "forum_topic_reopened"
+        if "has_media_spoiler" in obj:
+            opts["has_media_spoiler"] = obj["has_media_spoiler"]
+        if "forum_topic_edited" in obj:
+            opts["forum_topic_edited"] = ForumTopicEdited.de_json(
+                obj["forum_topic_edited"]
+            )
+            content_type = "forum_topic_edited"
+        if "general_forum_topic_hidden" in obj:
+            opts["general_forum_topic_hidden"] = GeneralForumTopicHidden.de_json(
+                obj["general_forum_topic_hidden"]
+            )
+            content_type = "general_forum_topic_hidden"
+        if "general_forum_topic_unhidden" in obj:
+            opts["general_forum_topic_unhidden"] = GeneralForumTopicUnhidden.de_json(
+                obj["general_forum_topic_unhidden"]
+            )
+            content_type = "general_forum_topic_unhidden"
+        if "write_access_allowed" in obj:
+            opts["write_access_allowed"] = WriteAccessAllowed.de_json(
+                obj["write_access_allowed"]
+            )
+            content_type = "write_access_allowed"
         return cls(message_id, from_user, date, chat, content_type, opts, json_string)
 
     @classmethod
@@ -1193,7 +1317,7 @@ class Message(JsonDeserializable):
         """
         Parses chat.
         """
-        if 'first_name' not in chat:
+        if "first_name" not in chat:
             return GroupChat.de_json(chat)
         else:
             return User.de_json(chat)
@@ -1218,7 +1342,9 @@ class Message(JsonDeserializable):
             ret.append(MessageEntity.de_json(me))
         return ret
 
-    def __init__(self, message_id, from_user, date, chat, content_type, options, json_string):
+    def __init__(
+        self, message_id, from_user, date, chat, content_type, options, json_string
+    ):
         self.content_type: str = content_type
         # Lets fix the telegram usability ####up with ID in Message :)
         self.id: int = message_id
@@ -1318,10 +1444,10 @@ class Message(JsonDeserializable):
             "pre": "<pre>{text}</pre>",
             "code": "<code>{text}</code>",
             # "url": "<a href=\"{url}\">{text}</a>", # @badiboy plain URLs have no text and do not need tags
-            "text_link": "<a href=\"{url}\">{text}</a>",
+            "text_link": '<a href="{url}">{text}</a>',
             "strikethrough": "<s>{text}</s>",
-            "underline":     "<u>{text}</u>",
-            "spoiler": "<span class=\"tg-spoiler\">{text}</span>",
+            "underline": "<u>{text}</u>",
+            "spoiler": '<span class="tg-spoiler">{text}</span>',
         }
 
         if hasattr(self, "custom_subs"):
@@ -1337,8 +1463,10 @@ class Message(JsonDeserializable):
                 url = "tg://user?id={0}".format(user.id)
             elif subst_type == "mention":
                 url = "https://t.me/{0}".format(upd_text[1:])
-            upd_text = upd_text.replace("&", "&amp;").replace(
-                "<", "&lt;").replace(">", "&gt;")
+            upd_text = (
+                upd_text.replace("&", "&amp;").replace(
+                    "<", "&lt;").replace(">", "&gt;")
+            )
             if not subst_type or not _subs.get(subst_type):
                 return upd_text
             subs = _subs.get(subst_type)
@@ -1349,28 +1477,41 @@ class Message(JsonDeserializable):
             if entity.offset > offset:
                 html_text += func(utf16_text[offset * 2: entity.offset * 2])
                 offset = entity.offset
-                html_text += func(utf16_text[offset * 2: (offset + entity.length)
-                                  * 2], entity.type, entity.url, entity.user)
+                html_text += func(
+                    utf16_text[offset * 2: (offset + entity.length) * 2],
+                    entity.type,
+                    entity.url,
+                    entity.user,
+                )
                 offset += entity.length
             elif entity.offset == offset:
-                html_text += func(utf16_text[offset * 2: (offset + entity.length)
-                                  * 2], entity.type, entity.url, entity.user)
+                html_text += func(
+                    utf16_text[offset * 2: (offset + entity.length) * 2],
+                    entity.type,
+                    entity.url,
+                    entity.user,
+                )
                 offset += entity.length
             else:
                 # Here we are processing nested entities.
                 # We shouldn't update offset, because they are the same as entity before.
                 # And, here we are replacing previous string with a new html-rendered text(previous string is already html-rendered,
                 # And we don't change it).
-                entity_string = utf16_text[entity.offset *
-                                           2: (entity.offset + entity.length) * 2]
+                entity_string = utf16_text[
+                    entity.offset * 2: (entity.offset + entity.length) * 2
+                ]
                 formatted_string = func(
-                    entity_string, entity.type, entity.url, entity.user)
+                    entity_string, entity.type, entity.url, entity.user
+                )
                 entity_string_decoded = entity_string.decode("utf-16-le")
                 last_occurence = html_text.rfind(entity_string_decoded)
                 string_length = len(entity_string_decoded)
-                #html_text = html_text.replace(html_text[last_occurence:last_occurence+string_length], formatted_string)
-                html_text = html_text[:last_occurence] + \
-                    formatted_string + html_text[last_occurence+string_length:]
+                # html_text = html_text.replace(html_text[last_occurence:last_occurence+string_length], formatted_string)
+                html_text = (
+                    html_text[:last_occurence]
+                    + formatted_string
+                    + html_text[last_occurence + string_length:]
+                )
         if offset * 2 < len(utf16_text):
             html_text += func(utf16_text[offset * 2:])
 
@@ -1397,11 +1538,11 @@ class MessageEntity(Dictionaryable, JsonSerializable, JsonDeserializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#messageentity
 
-    :param type: Type of the entity. Currently, can be “mention” (@username), “hashtag” (#hashtag), “cashtag” 
-        ($USD), “bot_command” (/start@jobs_bot), “url” (https://telegram.org), “email” 
-        (do-not-reply@telegram.org), “phone_number” (+1-212-555-0123), “bold” (bold text), “italic” (italic text), 
-        “underline” (underlined text), “strikethrough” (strikethrough text), “spoiler” (spoiler message), “code” 
-        (monowidth string), “pre” (monowidth block), “text_link” (for clickable text URLs), “text_mention” (for users 
+    :param type: Type of the entity. Currently, can be “mention” (@username), “hashtag” (#hashtag), “cashtag”
+        ($USD), “bot_command” (/start@jobs_bot), “url” (https://telegram.org), “email”
+        (do-not-reply@telegram.org), “phone_number” (+1-212-555-0123), “bold” (bold text), “italic” (italic text),
+        “underline” (underlined text), “strikethrough” (strikethrough text), “spoiler” (spoiler message), “code”
+        (monowidth string), “pre” (monowidth block), “text_link” (for clickable text URLs), “text_mention” (for users
         without usernames), “custom_emoji” (for inline custom emoji stickers)
     :type type: :obj:`str`
 
@@ -1427,6 +1568,7 @@ class MessageEntity(Dictionaryable, JsonSerializable, JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.MessageEntity`
     """
+
     @staticmethod
     def to_list_of_dicts(entity_list) -> Union[List[Dict], None]:
         """
@@ -1442,11 +1584,21 @@ class MessageEntity(Dictionaryable, JsonSerializable, JsonDeserializable):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'user' in obj:
-            obj['user'] = User.de_json(obj['user'])
+        if "user" in obj:
+            obj["user"] = User.de_json(obj["user"])
         return cls(**obj)
 
-    def __init__(self, type, offset, length, url=None, user=None, language=None, custom_emoji_id=None, **kwargs):
+    def __init__(
+        self,
+        type,
+        offset,
+        length,
+        url=None,
+        user=None,
+        language=None,
+        custom_emoji_id=None,
+        **kwargs
+    ):
         self.type: str = type
         self.offset: int = offset
         self.length: int = length
@@ -1459,13 +1611,15 @@ class MessageEntity(Dictionaryable, JsonSerializable, JsonDeserializable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        return {"type": self.type,
-                "offset": self.offset,
-                "length": self.length,
-                "url": self.url,
-                "user": self.user,
-                "language":  self.language,
-                "custom_emoji_id": self.custom_emoji_id}
+        return {
+            "type": self.type,
+            "offset": self.offset,
+            "length": self.length,
+            "url": self.url,
+            "user": self.user,
+            "language": self.language,
+            "custom_emoji_id": self.custom_emoji_id,
+        }
 
 
 class Dice(JsonSerializable, Dictionaryable, JsonDeserializable):
@@ -1483,6 +1637,7 @@ class Dice(JsonSerializable, Dictionaryable, JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.Dice`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -1498,17 +1653,17 @@ class Dice(JsonSerializable, Dictionaryable, JsonDeserializable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        return {'value': self.value,
-                'emoji': self.emoji}
+        return {"value": self.value, "emoji": self.emoji}
+
 
 class PhotoSize(JsonDeserializable):
     @classmethod
     def de_json(cls, json_string):
         obj = cls.check_json(json_string)
-        file_id = obj['file_id']
-        width = obj['width']
-        height = obj['height']
-        file_size = obj.get('file_size')
+        file_id = obj["file_id"]
+        width = obj["width"]
+        height = obj["height"]
+        file_size = obj.get("file_size")
         return cls(file_id, width, height, file_size)
 
     def __init__(self, file_id, width, height, file_size=None):
@@ -1516,7 +1671,8 @@ class PhotoSize(JsonDeserializable):
         self.height = height
         self.width = width
         self.file_id = file_id
-        
+
+
 # class PhotoSize(JsonDeserializable):
 #     @classmethod
 #     def de_json(cls, json_string):
@@ -1542,7 +1698,7 @@ class Audio(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
@@ -1561,8 +1717,8 @@ class Audio(JsonDeserializable):
     :param mime_type: Optional. MIME type of the file as defined by sender
     :type mime_type: :obj:`str`
 
-    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have 
-        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or 
+    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have
+        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or
         double-precision float type are safe for storing this value.
     :type file_size: :obj:`int`
 
@@ -1572,19 +1728,31 @@ class Audio(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.Audio`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'thumb' in obj and 'file_id' in obj['thumb']:
-            obj['thumb'] = PhotoSize.de_json(obj['thumb'])
+        if "thumb" in obj and "file_id" in obj["thumb"]:
+            obj["thumb"] = PhotoSize.de_json(obj["thumb"])
         else:
-            obj['thumb'] = None
+            obj["thumb"] = None
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, duration, performer=None, title=None, file_name=None, mime_type=None,
-                 file_size=None, thumb=None, **kwargs):
+    def __init__(
+        self,
+        file_id,
+        file_unique_id,
+        duration,
+        performer=None,
+        title=None,
+        file_name=None,
+        mime_type=None,
+        file_size=None,
+        thumb=None,
+        **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.duration: int = duration
@@ -1605,7 +1773,7 @@ class Voice(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
@@ -1615,14 +1783,15 @@ class Voice(JsonDeserializable):
     :param mime_type: Optional. MIME type of the file as defined by sender
     :type mime_type: :obj:`str`
 
-    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have 
-        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or 
+    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have
+        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or
         double-precision float type are safe for storing this value.
     :type file_size: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Voice`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -1630,7 +1799,15 @@ class Voice(JsonDeserializable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, duration, mime_type=None, file_size=None, **kwargs):
+    def __init__(
+        self,
+        file_id,
+        file_unique_id,
+        duration,
+        mime_type=None,
+        file_size=None,
+        **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.duration: int = duration
@@ -1647,7 +1824,7 @@ class Document(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
@@ -1660,26 +1837,36 @@ class Document(JsonDeserializable):
     :param mime_type: Optional. MIME type of the file as defined by sender
     :type mime_type: :obj:`str`
 
-    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have 
-        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or 
+    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have
+        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or
         double-precision float type are safe for storing this value.
     :type file_size: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Document`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'thumb' in obj and 'file_id' in obj['thumb']:
-            obj['thumb'] = PhotoSize.de_json(obj['thumb'])
+        if "thumb" in obj and "file_id" in obj["thumb"]:
+            obj["thumb"] = PhotoSize.de_json(obj["thumb"])
         else:
-            obj['thumb'] = None
+            obj["thumb"] = None
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, thumb=None, file_name=None, mime_type=None, file_size=None, **kwargs):
+    def __init__(
+        self,
+        file_id,
+        file_unique_id,
+        thumb=None,
+        file_name=None,
+        mime_type=None,
+        file_size=None,
+        **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.thumb: PhotoSize = thumb
@@ -1697,7 +1884,7 @@ class Video(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
@@ -1719,24 +1906,37 @@ class Video(JsonDeserializable):
     :param mime_type: Optional. MIME type of the file as defined by sender
     :type mime_type: :obj:`str`
 
-    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have 
-        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or 
+    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have
+        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or
         double-precision float type are safe for storing this value.
     :type file_size: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Video`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'thumb' in obj and 'file_id' in obj['thumb']:
-            obj['thumb'] = PhotoSize.de_json(obj['thumb'])
+        if "thumb" in obj and "file_id" in obj["thumb"]:
+            obj["thumb"] = PhotoSize.de_json(obj["thumb"])
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, width, height, duration, thumb=None, file_name=None, mime_type=None, file_size=None, **kwargs):
+    def __init__(
+        self,
+        file_id,
+        file_unique_id,
+        width,
+        height,
+        duration,
+        thumb=None,
+        file_name=None,
+        mime_type=None,
+        file_size=None,
+        **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.width: int = width
@@ -1757,7 +1957,7 @@ class VideoNote(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
@@ -1776,16 +1976,26 @@ class VideoNote(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.VideoNote`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'thumb' in obj and 'file_id' in obj['thumb']:
-            obj['thumb'] = PhotoSize.de_json(obj['thumb'])
+        if "thumb" in obj and "file_id" in obj["thumb"]:
+            obj["thumb"] = PhotoSize.de_json(obj["thumb"])
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, length, duration, thumb=None, file_size=None, **kwargs):
+    def __init__(
+        self,
+        file_id,
+        file_unique_id,
+        length,
+        duration,
+        thumb=None,
+        file_size=None,
+        **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.length: int = length
@@ -1809,8 +2019,8 @@ class Contact(JsonDeserializable):
     :param last_name: Optional. Contact's last name
     :type last_name: :obj:`str`
 
-    :param user_id: Optional. Contact's user identifier in Telegram. This number may have more than 32 significant bits 
-        and some programming languages may have difficulty/silent defects in interpreting it. But it has at most 52 
+    :param user_id: Optional. Contact's user identifier in Telegram. This number may have more than 32 significant bits
+        and some programming languages may have difficulty/silent defects in interpreting it. But it has at most 52
         significant bits, so a 64-bit integer or double-precision float type are safe for storing this identifier.
     :type user_id: :obj:`int`
 
@@ -1820,6 +2030,7 @@ class Contact(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.Contact`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -1827,7 +2038,15 @@ class Contact(JsonDeserializable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, phone_number, first_name, last_name=None, user_id=None, vcard=None, **kwargs):
+    def __init__(
+        self,
+        phone_number,
+        first_name,
+        last_name=None,
+        user_id=None,
+        vcard=None,
+        **kwargs
+    ):
         self.phone_number: str = phone_number
         self.first_name: str = first_name
         self.last_name: str = last_name
@@ -1850,20 +2069,21 @@ class Location(JsonDeserializable, JsonSerializable, Dictionaryable):
     :param horizontal_accuracy: Optional. The radius of uncertainty for the location, measured in meters; 0-1500
     :type horizontal_accuracy: :obj:`float` number
 
-    :param live_period: Optional. Time relative to the message sending date, during which the location can be updated; 
+    :param live_period: Optional. Time relative to the message sending date, during which the location can be updated;
         in seconds. For active live locations only.
     :type live_period: :obj:`int`
 
     :param heading: Optional. The direction in which user is moving, in degrees; 1-360. For active live locations only.
     :type heading: :obj:`int`
 
-    :param proximity_alert_radius: Optional. The maximum distance for proximity alerts about approaching another 
+    :param proximity_alert_radius: Optional. The maximum distance for proximity alerts about approaching another
         chat member, in meters. For sent live locations only.
     :type proximity_alert_radius: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Location`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -1871,8 +2091,16 @@ class Location(JsonDeserializable, JsonSerializable, Dictionaryable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, longitude, latitude, horizontal_accuracy=None,
-                 live_period=None, heading=None, proximity_alert_radius=None, **kwargs):
+    def __init__(
+        self,
+        longitude,
+        latitude,
+        horizontal_accuracy=None,
+        live_period=None,
+        heading=None,
+        proximity_alert_radius=None,
+        **kwargs
+    ):
         self.longitude: float = longitude
         self.latitude: float = latitude
         self.horizontal_accuracy: float = horizontal_accuracy
@@ -1912,7 +2140,7 @@ class Venue(JsonDeserializable):
     :param foursquare_id: Optional. Foursquare identifier of the venue
     :type foursquare_id: :obj:`str`
 
-    :param foursquare_type: Optional. Foursquare type of the venue. (For example, “arts_entertainment/default”, 
+    :param foursquare_type: Optional. Foursquare type of the venue. (For example, “arts_entertainment/default”,
         “arts_entertainment/aquarium” or “food/icecream”.)
     :type foursquare_type: :obj:`str`
 
@@ -1925,16 +2153,26 @@ class Venue(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.Venue`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['location'] = Location.de_json(obj['location'])
+        obj["location"] = Location.de_json(obj["location"])
         return cls(**obj)
 
-    def __init__(self, location, title, address, foursquare_id=None, foursquare_type=None,
-                 google_place_id=None, google_place_type=None, **kwargs):
+    def __init__(
+        self,
+        location,
+        title,
+        address,
+        foursquare_id=None,
+        foursquare_type=None,
+        google_place_id=None,
+        google_place_type=None,
+        **kwargs
+    ):
         self.location: Location = location
         self.title: str = title
         self.address: str = address
@@ -1958,18 +2196,20 @@ class Venue(JsonDeserializable):
 #         self.total_count: int = total_count
 #         self.photos: List[PhotoSize] = photos
 
+
 class UserProfilePhotos(JsonDeserializable):
     @classmethod
     def de_json(cls, json_string):
         obj = cls.check_json(json_string)
-        total_count = obj['total_count']
-        photos = [[PhotoSize.de_json(y) for y in x] for x in obj['photos']]
+        total_count = obj["total_count"]
+        photos = [[PhotoSize.de_json(y) for y in x] for x in obj["photos"]]
         return cls(total_count, photos)
 
     def __init__(self, total_count, photos):
         self.total_count = total_count
         self.photos = photos
-        
+
+
 class File(JsonDeserializable):
     """
     This object represents a file ready to be downloaded. The file can be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling getFile.
@@ -1979,22 +2219,23 @@ class File(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
-    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have 
-        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or 
+    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have
+        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or
         double-precision float type are safe for storing this value.
     :type file_size: :obj:`int`
 
-    :param file_path: Optional. File path. Use https://api.telegram.org/file/bot<token>/<file_path> to get the 
+    :param file_path: Optional. File path. Use https://api.telegram.org/file/bot<token>/<file_path> to get the
         file.
     :type file_path: :obj:`str`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.File`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -2002,7 +2243,9 @@ class File(JsonDeserializable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, file_size=None, file_path=None, **kwargs):
+    def __init__(
+        self, file_id, file_unique_id, file_size=None, file_path=None, **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.file_size: int = file_size
@@ -2015,16 +2258,16 @@ class ForceReply(JsonSerializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#forcereply
 
-    :param force_reply: Shows reply interface to the user, as if they manually selected the bot's message and tapped 
+    :param force_reply: Shows reply interface to the user, as if they manually selected the bot's message and tapped
         'Reply'
     :type force_reply: :obj:`bool`
 
-    :param input_field_placeholder: Optional. The placeholder to be shown in the input field when the reply is active; 
+    :param input_field_placeholder: Optional. The placeholder to be shown in the input field when the reply is active;
         1-64 characters
     :type input_field_placeholder: :obj:`str`
 
-    :param selective: Optional. Use this parameter if you want to force reply from specific users only. Targets: 1) users 
-        that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has reply_to_message_id), 
+    :param selective: Optional. Use this parameter if you want to force reply from specific users only. Targets: 1) users
+        that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has reply_to_message_id),
         sender of the original message.
     :type selective: :obj:`bool`
 
@@ -2032,16 +2275,20 @@ class ForceReply(JsonSerializable):
     :rtype: :class:`telebot.types.ForceReply`
     """
 
-    def __init__(self, selective: Optional[bool] = None, input_field_placeholder: Optional[str] = None):
+    def __init__(
+        self,
+        selective: Optional[bool] = None,
+        input_field_placeholder: Optional[str] = None,
+    ):
         self.selective: bool = selective
         self.input_field_placeholder: str = input_field_placeholder
 
     def to_json(self):
-        json_dict = {'force_reply': True}
+        json_dict = {"force_reply": True}
         if self.selective is not None:
-            json_dict['selective'] = self.selective
+            json_dict["selective"] = self.selective
         if self.input_field_placeholder:
-            json_dict['input_field_placeholder'] = self.input_field_placeholder
+            json_dict["input_field_placeholder"] = self.input_field_placeholder
         return json.dumps(json_dict)
 
 
@@ -2051,16 +2298,16 @@ class ReplyKeyboardRemove(JsonSerializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#replykeyboardremove
 
-    :param remove_keyboard: Requests clients to remove the custom keyboard (user will not be able to summon this 
-        keyboard; if you want to hide the keyboard from sight but keep it accessible, use one_time_keyboard in 
+    :param remove_keyboard: Requests clients to remove the custom keyboard (user will not be able to summon this
+        keyboard; if you want to hide the keyboard from sight but keep it accessible, use one_time_keyboard in
         ReplyKeyboardMarkup)
         Note that this parameter is set to True by default by the library. You cannot modify it.
     :type remove_keyboard: :obj:`bool`
 
-    :param selective: Optional. Use this parameter if you want to remove the keyboard for specific users only. Targets: 
-        1) users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has 
-        reply_to_message_id), sender of the original message.Example: A user votes in a poll, bot returns confirmation 
-        message in reply to the vote and removes the keyboard for that user, while still showing the keyboard with poll options 
+    :param selective: Optional. Use this parameter if you want to remove the keyboard for specific users only. Targets:
+        1) users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has
+        reply_to_message_id), sender of the original message.Example: A user votes in a poll, bot returns confirmation
+        message in reply to the vote and removes the keyboard for that user, while still showing the keyboard with poll options
         to users who haven't voted yet.
     :type selective: :obj:`bool`
 
@@ -2072,9 +2319,9 @@ class ReplyKeyboardRemove(JsonSerializable):
         self.selective: bool = selective
 
     def to_json(self):
-        json_dict = {'remove_keyboard': True}
+        json_dict = {"remove_keyboard": True}
         if self.selective:
-            json_dict['selective'] = self.selective
+            json_dict["selective"] = self.selective
         return json.dumps(json_dict)
 
 
@@ -2090,6 +2337,7 @@ class WebAppInfo(JsonDeserializable, Dictionaryable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.WebAppInfo`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -2101,7 +2349,7 @@ class WebAppInfo(JsonDeserializable, Dictionaryable):
         self.url: str = url
 
     def to_dict(self):
-        return {'url': self.url}
+        return {"url": self.url}
 
 
 class ReplyKeyboardMarkup(JsonSerializable):
@@ -2123,27 +2371,27 @@ class ReplyKeyboardMarkup(JsonSerializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#replykeyboardmarkup
 
-    :param keyboard: :obj:`list` of button rows, each represented by an :obj:`list` of 
+    :param keyboard: :obj:`list` of button rows, each represented by an :obj:`list` of
         :class:`telebot.types.KeyboardButton` objects
     :type keyboard: :obj:`list` of :obj:`list` of :class:`telebot.types.KeyboardButton`
 
-    :param resize_keyboard: Optional. Requests clients to resize the keyboard vertically for optimal fit (e.g., make 
-        the keyboard smaller if there are just two rows of buttons). Defaults to false, in which case the custom keyboard is 
+    :param resize_keyboard: Optional. Requests clients to resize the keyboard vertically for optimal fit (e.g., make
+        the keyboard smaller if there are just two rows of buttons). Defaults to false, in which case the custom keyboard is
         always of the same height as the app's standard keyboard.
     :type resize_keyboard: :obj:`bool`
 
-    :param one_time_keyboard: Optional. Requests clients to hide the keyboard as soon as it's been used. The keyboard 
-        will still be available, but clients will automatically display the usual letter-keyboard in the chat - the user can 
+    :param one_time_keyboard: Optional. Requests clients to hide the keyboard as soon as it's been used. The keyboard
+        will still be available, but clients will automatically display the usual letter-keyboard in the chat - the user can
         press a special button in the input field to see the custom keyboard again. Defaults to false.
     :type one_time_keyboard: :obj:`bool`
 
-    :param input_field_placeholder: Optional. The placeholder to be shown in the input field when the keyboard is 
+    :param input_field_placeholder: Optional. The placeholder to be shown in the input field when the keyboard is
         active; 1-64 characters
     :type input_field_placeholder: :obj:`str`
 
-    :param selective: Optional. Use this parameter if you want to show the keyboard to specific users only. Targets: 1) 
-        users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has 
-        reply_to_message_id), sender of the original message.Example: A user requests to change the bot's language, bot 
+    :param selective: Optional. Use this parameter if you want to show the keyboard to specific users only. Targets: 1)
+        users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has
+        reply_to_message_id), sender of the original message.Example: A user requests to change the bot's language, bot
         replies to the request with a keyboard to select the new language. Other users in the group don't see the keyboard.
     :type selective: :obj:`bool`
 
@@ -2157,16 +2405,25 @@ class ReplyKeyboardMarkup(JsonSerializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ReplyKeyboardMarkup`
     """
+
     max_row_keys = 12
 
-    def __init__(self, resize_keyboard: Optional[bool] = None, one_time_keyboard: Optional[bool] = None,
-                 selective: Optional[bool] = None, row_width: int = 3, input_field_placeholder: Optional[str] = None,
-                 is_persistent: Optional[bool] = None):
+    def __init__(
+        self,
+        resize_keyboard: Optional[bool] = None,
+        one_time_keyboard: Optional[bool] = None,
+        selective: Optional[bool] = None,
+        row_width: int = 3,
+        input_field_placeholder: Optional[str] = None,
+        is_persistent: Optional[bool] = None,
+    ):
         if row_width > self.max_row_keys:
             # Todo: Will be replaced with Exception in future releases
             if not DISABLE_KEYLEN_ERROR:
                 logger.error(
-                    'Telegram does not support reply keyboard row width over %d.' % self.max_row_keys)
+                    "Telegram does not support reply keyboard row width over %d."
+                    % self.max_row_keys
+                )
             row_width = self.max_row_keys
 
         self.resize_keyboard: bool = resize_keyboard
@@ -2201,16 +2458,18 @@ class ReplyKeyboardMarkup(JsonSerializable):
             # Todo: Will be replaced with Exception in future releases
             if not DISABLE_KEYLEN_ERROR:
                 logger.error(
-                    'Telegram does not support reply keyboard row width over %d.' % self.max_row_keys)
+                    "Telegram does not support reply keyboard row width over %d."
+                    % self.max_row_keys
+                )
             row_width = self.max_row_keys
 
         for row in chunks(args, row_width):
             button_array = []
             for button in row:
                 if is_string(button):
-                    button_array.append({'text': button})
+                    button_array.append({"text": button})
                 elif is_bytes(button):
-                    button_array.append({'text': button.decode('utf-8')})
+                    button_array.append({"text": button.decode("utf-8")})
                 else:
                     button_array.append(button.to_dict())
             self.keyboard.append(button_array)
@@ -2233,17 +2492,17 @@ class ReplyKeyboardMarkup(JsonSerializable):
         return self.add(*args, row_width=self.max_row_keys)
 
     def to_json(self):
-        json_dict = {'keyboard': self.keyboard}
+        json_dict = {"keyboard": self.keyboard}
         if self.one_time_keyboard is not None:
-            json_dict['one_time_keyboard'] = self.one_time_keyboard
+            json_dict["one_time_keyboard"] = self.one_time_keyboard
         if self.resize_keyboard is not None:
-            json_dict['resize_keyboard'] = self.resize_keyboard
+            json_dict["resize_keyboard"] = self.resize_keyboard
         if self.selective is not None:
-            json_dict['selective'] = self.selective
+            json_dict["selective"] = self.selective
         if self.input_field_placeholder:
-            json_dict['input_field_placeholder'] = self.input_field_placeholder
+            json_dict["input_field_placeholder"] = self.input_field_placeholder
         if self.is_persistent is not None:
-            json_dict['is_persistent'] = self.is_persistent
+            json_dict["is_persistent"] = self.is_persistent
         return json.dumps(json_dict)
 
 
@@ -2253,7 +2512,7 @@ class KeyboardButtonPollType(Dictionaryable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#keyboardbuttonpolltype
 
-    :param type: Optional. If quiz is passed, the user will be allowed to create only polls in the quiz mode. If regular is 
+    :param type: Optional. If quiz is passed, the user will be allowed to create only polls in the quiz mode. If regular is
         passed, only regular polls will be allowed. Otherwise, the user will be allowed to create a poll of any type.
     :type type: :obj:`str`
 
@@ -2261,11 +2520,11 @@ class KeyboardButtonPollType(Dictionaryable):
     :rtype: :class:`telebot.types.KeyboardButtonPollType`
     """
 
-    def __init__(self, type=''):
+    def __init__(self, type=""):
         self.type: str = type
 
     def to_dict(self):
-        return {'type': self.type}
+        return {"type": self.type}
 
 
 class KeyboardButton(Dictionaryable, JsonSerializable):
@@ -2274,23 +2533,23 @@ class KeyboardButton(Dictionaryable, JsonSerializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#keyboardbutton
 
-    :param text: Text of the button. If none of the optional fields are used, it will be sent as a message when the button is 
+    :param text: Text of the button. If none of the optional fields are used, it will be sent as a message when the button is
         pressed
     :type text: :obj:`str`
 
-    :param request_contact: Optional. If True, the user's phone number will be sent as a contact when the button is 
+    :param request_contact: Optional. If True, the user's phone number will be sent as a contact when the button is
         pressed. Available in private chats only.
     :type request_contact: :obj:`bool`
 
-    :param request_location: Optional. If True, the user's current location will be sent when the button is pressed. 
+    :param request_location: Optional. If True, the user's current location will be sent when the button is pressed.
         Available in private chats only.
     :type request_location: :obj:`bool`
 
-    :param request_poll: Optional. If specified, the user will be asked to create a poll and send it to the bot when the 
+    :param request_poll: Optional. If specified, the user will be asked to create a poll and send it to the bot when the
         button is pressed. Available in private chats only.
     :type request_poll: :class:`telebot.types.KeyboardButtonPollType`
 
-    :param web_app: Optional. If specified, the described Web App will be launched when the button is pressed. The Web App 
+    :param web_app: Optional. If specified, the described Web App will be launched when the button is pressed. The Web App
         will be able to send a “web_app_data” service message. Available in private chats only.
     :type web_app: :class:`telebot.types.WebAppInfo`
 
@@ -2298,9 +2557,14 @@ class KeyboardButton(Dictionaryable, JsonSerializable):
     :rtype: :class:`telebot.types.KeyboardButton`
     """
 
-    def __init__(self, text: str, request_contact: Optional[bool] = None,
-                 request_location: Optional[bool] = None, request_poll: Optional[KeyboardButtonPollType] = None,
-                 web_app: WebAppInfo = None):
+    def __init__(
+        self,
+        text: str,
+        request_contact: Optional[bool] = None,
+        request_location: Optional[bool] = None,
+        request_poll: Optional[KeyboardButtonPollType] = None,
+        web_app: WebAppInfo = None,
+    ):
         self.text: str = text
         self.request_contact: bool = request_contact
         self.request_location: bool = request_location
@@ -2311,15 +2575,15 @@ class KeyboardButton(Dictionaryable, JsonSerializable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        json_dict = {'text': self.text}
+        json_dict = {"text": self.text}
         if self.request_contact is not None:
-            json_dict['request_contact'] = self.request_contact
+            json_dict["request_contact"] = self.request_contact
         if self.request_location is not None:
-            json_dict['request_location'] = self.request_location
+            json_dict["request_location"] = self.request_location
         if self.request_poll is not None:
-            json_dict['request_poll'] = self.request_poll.to_dict()
+            json_dict["request_poll"] = self.request_poll.to_dict()
         if self.web_app is not None:
-            json_dict['web_app'] = self.web_app.to_dict()
+            json_dict["web_app"] = self.web_app.to_dict()
         return json_dict
 
 
@@ -2342,13 +2606,14 @@ class InlineKeyboardMarkup(Dictionaryable, JsonSerializable, JsonDeserializable)
 
     Telegram Documentation: https://core.telegram.org/bots/api#inlinekeyboardmarkup
 
-    :param inline_keyboard: :obj:`list` of button rows, each represented by an :obj:`list` of 
+    :param inline_keyboard: :obj:`list` of button rows, each represented by an :obj:`list` of
         :class:`telebot.types.InlineKeyboardButton` objects
     :type inline_keyboard: :obj:`list` of :obj:`list` of :class:`telebot.types.InlineKeyboardButton`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.InlineKeyboardMarkup`
     """
+
     max_row_keys = 8
 
     @classmethod
@@ -2356,15 +2621,19 @@ class InlineKeyboardMarkup(Dictionaryable, JsonSerializable, JsonDeserializable)
         if json_string is None:
             return None
         obj = cls.check_json(json_string, dict_copy=False)
-        keyboard = [[InlineKeyboardButton.de_json(
-            button) for button in row] for row in obj['inline_keyboard']]
+        keyboard = [
+            [InlineKeyboardButton.de_json(button) for button in row]
+            for row in obj["inline_keyboard"]
+        ]
         return cls(keyboard=keyboard)
 
     def __init__(self, keyboard=None, row_width=3):
         if row_width > self.max_row_keys:
             # Todo: Will be replaced with Exception in future releases
             logger.error(
-                'Telegram does not support inline keyboard row width over %d.' % self.max_row_keys)
+                "Telegram does not support inline keyboard row width over %d."
+                % self.max_row_keys
+            )
             row_width = self.max_row_keys
 
         self.row_width: int = row_width
@@ -2396,7 +2665,9 @@ class InlineKeyboardMarkup(Dictionaryable, JsonSerializable, JsonDeserializable)
         if row_width > self.max_row_keys:
             # Todo: Will be replaced with Exception in future releases
             logger.error(
-                'Telegram does not support inline keyboard row width over %d.' % self.max_row_keys)
+                "Telegram does not support inline keyboard row width over %d."
+                % self.max_row_keys
+            )
             row_width = self.max_row_keys
 
         for row in chunks(args, row_width):
@@ -2428,8 +2699,9 @@ class InlineKeyboardMarkup(Dictionaryable, JsonSerializable, JsonDeserializable)
 
     def to_dict(self):
         json_dict = dict()
-        json_dict['inline_keyboard'] = [[button.to_dict() for button in row]
-                                        for row in self.keyboard]
+        json_dict["inline_keyboard"] = [
+            [button.to_dict() for button in row] for row in self.keyboard
+        ]
         return json_dict
 
 
@@ -2442,60 +2714,72 @@ class InlineKeyboardButton(Dictionaryable, JsonSerializable, JsonDeserializable)
     :param text: Label text on the button
     :type text: :obj:`str`
 
-    :param url: Optional. HTTP or tg:// URL to be opened when the button is pressed. Links tg://user?id=<user_id> can be 
+    :param url: Optional. HTTP or tg:// URL to be opened when the button is pressed. Links tg://user?id=<user_id> can be
         used to mention a user by their ID without using a username, if this is allowed by their privacy settings.
     :type url: :obj:`str`
 
     :param callback_data: Optional. Data to be sent in a callback query to the bot when button is pressed, 1-64 bytes
     :type callback_data: :obj:`str`
 
-    :param web_app: Optional. Description of the Web App that will be launched when the user presses the button. The Web 
-        App will be able to send an arbitrary message on behalf of the user using the method answerWebAppQuery. Available only 
+    :param web_app: Optional. Description of the Web App that will be launched when the user presses the button. The Web
+        App will be able to send an arbitrary message on behalf of the user using the method answerWebAppQuery. Available only
         in private chats between a user and the bot.
     :type web_app: :class:`telebot.types.WebAppInfo`
 
-    :param login_url: Optional. An HTTPS URL used to automatically authorize the user. Can be used as a replacement for 
+    :param login_url: Optional. An HTTPS URL used to automatically authorize the user. Can be used as a replacement for
         the Telegram Login Widget.
     :type login_url: :class:`telebot.types.LoginUrl`
 
-    :param switch_inline_query: Optional. If set, pressing the button will prompt the user to select one of their chats, 
-        open that chat and insert the bot's username and the specified inline query in the input field. May be empty, in which 
-        case just the bot's username will be inserted.Note: This offers an easy way for users to start using your bot in inline 
-        mode when they are currently in a private chat with it. Especially useful when combined with switch_pm… actions - in 
+    :param switch_inline_query: Optional. If set, pressing the button will prompt the user to select one of their chats,
+        open that chat and insert the bot's username and the specified inline query in the input field. May be empty, in which
+        case just the bot's username will be inserted.Note: This offers an easy way for users to start using your bot in inline
+        mode when they are currently in a private chat with it. Especially useful when combined with switch_pm… actions - in
         this case the user will be automatically returned to the chat they switched from, skipping the chat selection screen.
     :type switch_inline_query: :obj:`str`
 
-    :param switch_inline_query_current_chat: Optional. If set, pressing the button will insert the bot's username 
-        and the specified inline query in the current chat's input field. May be empty, in which case only the bot's username 
-        will be inserted.This offers a quick way for the user to open your bot in inline mode in the same chat - good for selecting 
+    :param switch_inline_query_current_chat: Optional. If set, pressing the button will insert the bot's username
+        and the specified inline query in the current chat's input field. May be empty, in which case only the bot's username
+        will be inserted.This offers a quick way for the user to open your bot in inline mode in the same chat - good for selecting
         something from multiple options.
     :type switch_inline_query_current_chat: :obj:`str`
 
-    :param callback_game: Optional. Description of the game that will be launched when the user presses the 
+    :param callback_game: Optional. Description of the game that will be launched when the user presses the
         button. NOTE: This type of button must always be the first button in the first row.
     :type callback_game: :class:`telebot.types.CallbackGame`
 
-    :param pay: Optional. Specify True, to send a Pay button. NOTE: This type of button must always be the first button in 
+    :param pay: Optional. Specify True, to send a Pay button. NOTE: This type of button must always be the first button in
         the first row and can only be used in invoice messages.
     :type pay: :obj:`bool`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.InlineKeyboardButton`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'login_url' in obj:
-            obj['login_url'] = LoginUrl.de_json(obj.get('login_url'))
-        if 'web_app' in obj:
-            obj['web_app'] = WebAppInfo.de_json(obj.get('web_app'))
+        if "login_url" in obj:
+            obj["login_url"] = LoginUrl.de_json(obj.get("login_url"))
+        if "web_app" in obj:
+            obj["web_app"] = WebAppInfo.de_json(obj.get("web_app"))
 
         return cls(**obj)
 
-    def __init__(self, text, url=None, callback_data=None, web_app=None, switch_inline_query=None,
-                 switch_inline_query_current_chat=None, callback_game=None, pay=None, login_url=None, **kwargs):
+    def __init__(
+        self,
+        text,
+        url=None,
+        callback_data=None,
+        web_app=None,
+        switch_inline_query=None,
+        switch_inline_query_current_chat=None,
+        callback_game=None,
+        pay=None,
+        login_url=None,
+        **kwargs
+    ):
         self.text: str = text
         self.url: str = url
         self.callback_data: str = callback_data
@@ -2510,23 +2794,25 @@ class InlineKeyboardButton(Dictionaryable, JsonSerializable, JsonDeserializable)
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        json_dict = {'text': self.text}
+        json_dict = {"text": self.text}
         if self.url:
-            json_dict['url'] = self.url
+            json_dict["url"] = self.url
         if self.callback_data:
-            json_dict['callback_data'] = self.callback_data
+            json_dict["callback_data"] = self.callback_data
         if self.web_app:
-            json_dict['web_app'] = self.web_app.to_dict()
+            json_dict["web_app"] = self.web_app.to_dict()
         if self.switch_inline_query is not None:
-            json_dict['switch_inline_query'] = self.switch_inline_query
+            json_dict["switch_inline_query"] = self.switch_inline_query
         if self.switch_inline_query_current_chat is not None:
-            json_dict['switch_inline_query_current_chat'] = self.switch_inline_query_current_chat
+            json_dict[
+                "switch_inline_query_current_chat"
+            ] = self.switch_inline_query_current_chat
         if self.callback_game is not None:
-            json_dict['callback_game'] = self.callback_game
+            json_dict["callback_game"] = self.callback_game
         if self.pay is not None:
-            json_dict['pay'] = self.pay
+            json_dict["pay"] = self.pay
         if self.login_url is not None:
-            json_dict['login_url'] = self.login_url.to_dict()
+            json_dict["login_url"] = self.login_url.to_dict()
         return json_dict
 
 
@@ -2536,28 +2822,29 @@ class LoginUrl(Dictionaryable, JsonSerializable, JsonDeserializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#loginurl
 
-    :param url: An HTTPS URL to be opened with user authorization data added to the query string when the button is pressed. 
-        If the user refuses to provide authorization data, the original URL without information about the user will be 
-        opened. The data added is the same as described in Receiving authorization data. NOTE: You must always check the hash 
-        of the received data to verify the authentication and the integrity of the data as described in Checking 
+    :param url: An HTTPS URL to be opened with user authorization data added to the query string when the button is pressed.
+        If the user refuses to provide authorization data, the original URL without information about the user will be
+        opened. The data added is the same as described in Receiving authorization data. NOTE: You must always check the hash
+        of the received data to verify the authentication and the integrity of the data as described in Checking
         authorization.
     :type url: :obj:`str`
 
     :param forward_text: Optional. New text of the button in forwarded messages.
     :type forward_text: :obj:`str`
 
-    :param bot_username: Optional. Username of a bot, which will be used for user authorization. See Setting up a bot for 
-        more details. If not specified, the current bot's username will be assumed. The url's domain must be the same as the 
+    :param bot_username: Optional. Username of a bot, which will be used for user authorization. See Setting up a bot for
+        more details. If not specified, the current bot's username will be assumed. The url's domain must be the same as the
         domain linked with the bot. See Linking your domain to the bot for more details.
     :type bot_username: :obj:`str`
 
-    :param request_write_access: Optional. Pass True to request the permission for your bot to send messages to the 
+    :param request_write_access: Optional. Pass True to request the permission for your bot to send messages to the
         user.
     :type request_write_access: :obj:`bool`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.LoginUrl`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -2565,7 +2852,14 @@ class LoginUrl(Dictionaryable, JsonSerializable, JsonDeserializable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, url, forward_text=None, bot_username=None, request_write_access=None, **kwargs):
+    def __init__(
+        self,
+        url,
+        forward_text=None,
+        bot_username=None,
+        request_write_access=None,
+        **kwargs
+    ):
         self.url: str = url
         self.forward_text: str = forward_text
         self.bot_username: str = bot_username
@@ -2575,13 +2869,13 @@ class LoginUrl(Dictionaryable, JsonSerializable, JsonDeserializable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        json_dict = {'url': self.url}
+        json_dict = {"url": self.url}
         if self.forward_text:
-            json_dict['forward_text'] = self.forward_text
+            json_dict["forward_text"] = self.forward_text
         if self.bot_username:
-            json_dict['bot_username'] = self.bot_username
+            json_dict["bot_username"] = self.bot_username
         if self.request_write_access is not None:
-            json_dict['request_write_access'] = self.request_write_access
+            json_dict["request_write_access"] = self.request_write_access
         return json_dict
 
 
@@ -2597,19 +2891,19 @@ class CallbackQuery(JsonDeserializable):
     :param from_user: Sender
     :type from_user: :class:`telebot.types.User`
 
-    :param message: Optional. Message with the callback button that originated the query. Note that message content and 
+    :param message: Optional. Message with the callback button that originated the query. Note that message content and
         message date will not be available if the message is too old
     :type message: :class:`telebot.types.Message`
 
-    :param inline_message_id: Optional. Identifier of the message sent via the bot in inline mode, that originated the 
+    :param inline_message_id: Optional. Identifier of the message sent via the bot in inline mode, that originated the
         query.
     :type inline_message_id: :obj:`str`
 
-    :param chat_instance: Global identifier, uniquely corresponding to the chat to which the message with the callback 
+    :param chat_instance: Global identifier, uniquely corresponding to the chat to which the message with the callback
         button was sent. Useful for high scores in games.
     :type chat_instance: :obj:`str`
 
-    :param data: Optional. Data associated with the callback button. Be aware that the message originated the query can 
+    :param data: Optional. Data associated with the callback button. Be aware that the message originated the query can
         contain no callback buttons with this data.
     :type data: :obj:`str`
 
@@ -2619,21 +2913,33 @@ class CallbackQuery(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.CallbackQuery`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if not "data" in obj:
+        if not ("data" in obj):
             # "data" field is Optional in the API, but historically is mandatory in the class constructor
-            obj['data'] = None
-        obj['from_user'] = User.de_json(obj.pop('from'))
-        if 'message' in obj:
-            obj['message'] = Message.de_json(obj.get('message'))
-        obj['json_string'] = json_string
+            obj["data"] = None
+        obj["from_user"] = User.de_json(obj.pop("from"))
+        if "message" in obj:
+            obj["message"] = Message.de_json(obj.get("message"))
+        obj["json_string"] = json_string
         return cls(**obj)
 
-    def __init__(self, id, from_user, data, chat_instance, json_string, message=None, inline_message_id=None, game_short_name=None, **kwargs):
+    def __init__(
+        self,
+        id,
+        from_user,
+        data,
+        chat_instance,
+        json_string,
+        message=None,
+        inline_message_id=None,
+        game_short_name=None,
+        **kwargs
+    ):
         self.id: int = id
         self.from_user: User = from_user
         self.message: Message = message
@@ -2650,25 +2956,26 @@ class ChatPhoto(JsonDeserializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#chatphoto
 
-    :param small_file_id: File identifier of small (160x160) chat photo. This file_id can be used only for photo 
+    :param small_file_id: File identifier of small (160x160) chat photo. This file_id can be used only for photo
         download and only for as long as the photo is not changed.
     :type small_file_id: :obj:`str`
 
-    :param small_file_unique_id: Unique file identifier of small (160x160) chat photo, which is supposed to be the same 
+    :param small_file_unique_id: Unique file identifier of small (160x160) chat photo, which is supposed to be the same
         over time and for different bots. Can't be used to download or reuse the file.
     :type small_file_unique_id: :obj:`str`
 
-    :param big_file_id: File identifier of big (640x640) chat photo. This file_id can be used only for photo download and 
+    :param big_file_id: File identifier of big (640x640) chat photo. This file_id can be used only for photo download and
         only for as long as the photo is not changed.
     :type big_file_id: :obj:`str`
 
-    :param big_file_unique_id: Unique file identifier of big (640x640) chat photo, which is supposed to be the same over 
+    :param big_file_unique_id: Unique file identifier of big (640x640) chat photo, which is supposed to be the same over
         time and for different bots. Can't be used to download or reuse the file.
     :type big_file_unique_id: :obj:`str`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatPhoto`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -2676,7 +2983,14 @@ class ChatPhoto(JsonDeserializable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, small_file_id, small_file_unique_id, big_file_id, big_file_unique_id, **kwargs):
+    def __init__(
+        self,
+        small_file_id,
+        small_file_unique_id,
+        big_file_id,
+        big_file_unique_id,
+        **kwargs
+    ):
         self.small_file_id: str = small_file_id
         self.small_file_unique_id: str = small_file_unique_id
         self.big_file_id: str = big_file_id
@@ -2703,8 +3017,8 @@ class ChatMember(JsonDeserializable):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['user'] = User.de_json(obj['user'])
-        member_type = obj['status']
+        obj["user"] = User.de_json(obj["user"])
+        member_type = obj["status"]
         # Ordered according to estimated appearance frequency.
         if member_type == "member":
             return ChatMemberMember(**obj)
@@ -2722,14 +3036,33 @@ class ChatMember(JsonDeserializable):
             # Should not be here. For "if something happen" compatibility
             return cls(**obj)
 
-    def __init__(self, user, status, custom_title=None, is_anonymous=None, can_be_edited=None,
-                 can_post_messages=None, can_edit_messages=None, can_delete_messages=None,
-                 can_restrict_members=None, can_promote_members=None, can_change_info=None,
-                 can_invite_users=None,  can_pin_messages=None, is_member=None,
-                 can_send_messages=None, can_send_media_messages=None, can_send_polls=None,
-                 can_send_other_messages=None, can_add_web_page_previews=None,
-                 can_manage_chat=None, can_manage_video_chats=None,
-                 until_date=None, can_manage_topics=None, **kwargs):
+    def __init__(
+        self,
+        user,
+        status,
+        custom_title=None,
+        is_anonymous=None,
+        can_be_edited=None,
+        can_post_messages=None,
+        can_edit_messages=None,
+        can_delete_messages=None,
+        can_restrict_members=None,
+        can_promote_members=None,
+        can_change_info=None,
+        can_invite_users=None,
+        can_pin_messages=None,
+        is_member=None,
+        can_send_messages=None,
+        can_send_media_messages=None,
+        can_send_polls=None,
+        can_send_other_messages=None,
+        can_add_web_page_previews=None,
+        can_manage_chat=None,
+        can_manage_video_chats=None,
+        until_date=None,
+        can_manage_topics=None,
+        **kwargs
+    ):
         self.user: User = user
         self.status: str = status
         self.custom_title: str = custom_title
@@ -2778,6 +3111,7 @@ class ChatMemberOwner(ChatMember):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatMemberOwner`
     """
+
     pass
 
 
@@ -2799,8 +3133,8 @@ class ChatMemberAdministrator(ChatMember):
     :param is_anonymous: True, if the user's presence in the chat is hidden
     :type is_anonymous: :obj:`bool`
 
-    :param can_manage_chat: True, if the administrator can access the chat event log, chat statistics, message 
-        statistics in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode. 
+    :param can_manage_chat: True, if the administrator can access the chat event log, chat statistics, message
+        statistics in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode.
         Implied by any other administrator privilege
     :type can_manage_chat: :obj:`bool`
 
@@ -2813,8 +3147,8 @@ class ChatMemberAdministrator(ChatMember):
     :param can_restrict_members: True, if the administrator can restrict, ban or unban chat members
     :type can_restrict_members: :obj:`bool`
 
-    :param can_promote_members: True, if the administrator can add new administrators with a subset of their own 
-        privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that 
+    :param can_promote_members: True, if the administrator can add new administrators with a subset of their own
+        privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that
         were appointed by the user)
     :type can_promote_members: :obj:`bool`
 
@@ -2827,7 +3161,7 @@ class ChatMemberAdministrator(ChatMember):
     :param can_post_messages: Optional. True, if the administrator can post in the channel; channels only
     :type can_post_messages: :obj:`bool`
 
-    :param can_edit_messages: Optional. True, if the administrator can edit messages of other users and can pin 
+    :param can_edit_messages: Optional. True, if the administrator can edit messages of other users and can pin
         messages; channels only
     :type can_edit_messages: :obj:`bool`
 
@@ -2844,6 +3178,7 @@ class ChatMemberAdministrator(ChatMember):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatMemberAdministrator`
     """
+
     pass
 
 
@@ -2862,6 +3197,7 @@ class ChatMemberMember(ChatMember):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatMemberMember`
     """
+
     pass
 
 
@@ -2895,27 +3231,28 @@ class ChatMemberRestricted(ChatMember):
     :param can_send_messages: True, if the user is allowed to send text messages, contacts, locations and venues
     :type can_send_messages: :obj:`bool`
 
-    :param can_send_media_messages: True, if the user is allowed to send audios, documents, photos, videos, video 
+    :param can_send_media_messages: True, if the user is allowed to send audios, documents, photos, videos, video
         notes and voice notes
     :type can_send_media_messages: :obj:`bool`
 
     :param can_send_polls: True, if the user is allowed to send polls
     :type can_send_polls: :obj:`bool`
 
-    :param can_send_other_messages: True, if the user is allowed to send animations, games, stickers and use inline 
+    :param can_send_other_messages: True, if the user is allowed to send animations, games, stickers and use inline
         bots
     :type can_send_other_messages: :obj:`bool`
 
     :param can_add_web_page_previews: True, if the user is allowed to add web page previews to their messages
     :type can_add_web_page_previews: :obj:`bool`
 
-    :param until_date: Date when restrictions will be lifted for this user; unix time. If 0, then the user is restricted 
+    :param until_date: Date when restrictions will be lifted for this user; unix time. If 0, then the user is restricted
         forever
     :type until_date: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatMemberRestricted`
     """
+
     pass
 
 
@@ -2934,6 +3271,7 @@ class ChatMemberLeft(ChatMember):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatMemberLeft`
     """
+
     pass
 
 
@@ -2949,13 +3287,14 @@ class ChatMemberBanned(ChatMember):
     :param user: Information about the user
     :type user: :class:`telebot.types.User`
 
-    :param until_date: Date when restrictions will be lifted for this user; unix time. If 0, then the user is banned 
+    :param until_date: Date when restrictions will be lifted for this user; unix time. If 0, then the user is banned
         forever
     :type until_date: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatMemberBanned`
     """
+
     pass
 
 
@@ -2965,26 +3304,26 @@ class ChatPermissions(JsonDeserializable, JsonSerializable, Dictionaryable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#chatpermissions
 
-    :param can_send_messages: Optional. True, if the user is allowed to send text messages, contacts, locations and 
+    :param can_send_messages: Optional. True, if the user is allowed to send text messages, contacts, locations and
         venues
     :type can_send_messages: :obj:`bool`
 
-    :param can_send_media_messages: Optional. True, if the user is allowed to send audios, documents, photos, videos, 
+    :param can_send_media_messages: Optional. True, if the user is allowed to send audios, documents, photos, videos,
         video notes and voice notes, implies can_send_messages
     :type can_send_media_messages: :obj:`bool`
 
     :param can_send_polls: Optional. True, if the user is allowed to send polls, implies can_send_messages
     :type can_send_polls: :obj:`bool`
 
-    :param can_send_other_messages: Optional. True, if the user is allowed to send animations, games, stickers and use 
+    :param can_send_other_messages: Optional. True, if the user is allowed to send animations, games, stickers and use
         inline bots, implies can_send_media_messages
     :type can_send_other_messages: :obj:`bool`
 
-    :param can_add_web_page_previews: Optional. True, if the user is allowed to add web page previews to their 
+    :param can_add_web_page_previews: Optional. True, if the user is allowed to add web page previews to their
         messages, implies can_send_media_messages
     :type can_add_web_page_previews: :obj:`bool`
 
-    :param can_change_info: Optional. True, if the user is allowed to change the chat title, photo and other settings. 
+    :param can_change_info: Optional. True, if the user is allowed to change the chat title, photo and other settings.
         Ignored in public supergroups
     :type can_change_info: :obj:`bool`
 
@@ -2996,11 +3335,12 @@ class ChatPermissions(JsonDeserializable, JsonSerializable, Dictionaryable):
 
     :param can_manage_topics: Optional. True, if the user is allowed to create forum topics. If omitted defaults to the
         value of can_pin_messages
-    :type can_manage_topics: :obj:`bool`    
+    :type can_manage_topics: :obj:`bool`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatPermissions`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -3008,11 +3348,19 @@ class ChatPermissions(JsonDeserializable, JsonSerializable, Dictionaryable):
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, can_send_messages=None, can_send_media_messages=None,
-                 can_send_polls=None, can_send_other_messages=None,
-                 can_add_web_page_previews=None, can_change_info=None,
-                 can_invite_users=None, can_pin_messages=None,
-                 can_manage_topics=None, **kwargs):
+    def __init__(
+        self,
+        can_send_messages=None,
+        can_send_media_messages=None,
+        can_send_polls=None,
+        can_send_other_messages=None,
+        can_add_web_page_previews=None,
+        can_change_info=None,
+        can_invite_users=None,
+        can_pin_messages=None,
+        can_manage_topics=None,
+        **kwargs
+    ):
         self.can_send_messages: bool = can_send_messages
         self.can_send_media_messages: bool = can_send_media_messages
         self.can_send_polls: bool = can_send_polls
@@ -3029,23 +3377,23 @@ class ChatPermissions(JsonDeserializable, JsonSerializable, Dictionaryable):
     def to_dict(self):
         json_dict = dict()
         if self.can_send_messages is not None:
-            json_dict['can_send_messages'] = self.can_send_messages
+            json_dict["can_send_messages"] = self.can_send_messages
         if self.can_send_media_messages is not None:
-            json_dict['can_send_media_messages'] = self.can_send_media_messages
+            json_dict["can_send_media_messages"] = self.can_send_media_messages
         if self.can_send_polls is not None:
-            json_dict['can_send_polls'] = self.can_send_polls
+            json_dict["can_send_polls"] = self.can_send_polls
         if self.can_send_other_messages is not None:
-            json_dict['can_send_other_messages'] = self.can_send_other_messages
+            json_dict["can_send_other_messages"] = self.can_send_other_messages
         if self.can_add_web_page_previews is not None:
-            json_dict['can_add_web_page_previews'] = self.can_add_web_page_previews
+            json_dict["can_add_web_page_previews"] = self.can_add_web_page_previews
         if self.can_change_info is not None:
-            json_dict['can_change_info'] = self.can_change_info
+            json_dict["can_change_info"] = self.can_change_info
         if self.can_invite_users is not None:
-            json_dict['can_invite_users'] = self.can_invite_users
+            json_dict["can_invite_users"] = self.can_invite_users
         if self.can_pin_messages is not None:
-            json_dict['can_pin_messages'] = self.can_pin_messages
+            json_dict["can_pin_messages"] = self.can_pin_messages
         if self.can_manage_topics is not None:
-            json_dict['can_manage_topics'] = self.can_manage_topics
+            json_dict["can_manage_topics"] = self.can_manage_topics
 
         return json_dict
 
@@ -3056,7 +3404,7 @@ class BotCommand(JsonSerializable, JsonDeserializable, Dictionaryable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#botcommand
 
-    :param command: Text of the command; 1-32 characters. Can contain only lowercase English letters, digits and 
+    :param command: Text of the command; 1-32 characters. Can contain only lowercase English letters, digits and
         underscores.
     :type command: :obj:`str`
 
@@ -3066,6 +3414,7 @@ class BotCommand(JsonSerializable, JsonDeserializable, Dictionaryable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.BotCommand`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -3081,10 +3430,11 @@ class BotCommand(JsonSerializable, JsonDeserializable, Dictionaryable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        return {'command': self.command, 'description': self.description}
+        return {"command": self.command, "description": self.description}
 
 
 # BotCommandScopes
+
 
 class BotCommandScope(ABC, JsonSerializable):
     """
@@ -3129,17 +3479,17 @@ class BotCommandScope(ABC, JsonSerializable):
     :rtype: :class:`telebot.types.BotCommandScope`
     """
 
-    def __init__(self, type='default', chat_id=None, user_id=None):
+    def __init__(self, type="default", chat_id=None, user_id=None):
         self.type: str = type
         self.chat_id: Optional[Union[int, str]] = chat_id
         self.user_id: Optional[Union[int, str]] = user_id
 
     def to_json(self):
-        json_dict = {'type': self.type}
+        json_dict = {"type": self.type}
         if self.chat_id:
-            json_dict['chat_id'] = self.chat_id
+            json_dict["chat_id"] = self.chat_id
         if self.user_id:
-            json_dict['user_id'] = self.user_id
+            json_dict["user_id"] = self.user_id
         return json.dumps(json_dict)
 
 
@@ -3161,7 +3511,7 @@ class BotCommandScopeDefault(BotCommandScope):
         Represents the default scope of bot commands.
         Default commands are used if no commands with a narrower scope are specified for the user.
         """
-        super(BotCommandScopeDefault, self).__init__(type='default')
+        super(BotCommandScopeDefault, self).__init__(type="default")
 
 
 class BotCommandScopeAllPrivateChats(BotCommandScope):
@@ -3182,7 +3532,7 @@ class BotCommandScopeAllPrivateChats(BotCommandScope):
         Represents the scope of bot commands, covering all private chats.
         """
         super(BotCommandScopeAllPrivateChats, self).__init__(
-            type='all_private_chats')
+            type="all_private_chats")
 
 
 class BotCommandScopeAllGroupChats(BotCommandScope):
@@ -3203,7 +3553,7 @@ class BotCommandScopeAllGroupChats(BotCommandScope):
         Represents the scope of bot commands, covering all group and supergroup chats.
         """
         super(BotCommandScopeAllGroupChats, self).__init__(
-            type='all_group_chats')
+            type="all_group_chats")
 
 
 class BotCommandScopeAllChatAdministrators(BotCommandScope):
@@ -3224,7 +3574,8 @@ class BotCommandScopeAllChatAdministrators(BotCommandScope):
         Represents the scope of bot commands, covering all group and supergroup chat administrators.
         """
         super(BotCommandScopeAllChatAdministrators, self).__init__(
-            type='all_chat_administrators')
+            type="all_chat_administrators"
+        )
 
 
 class BotCommandScopeChat(BotCommandScope):
@@ -3236,7 +3587,7 @@ class BotCommandScopeChat(BotCommandScope):
     :param type: Scope type, must be chat
     :type type: :obj:`str`
 
-    :param chat_id: Unique identifier for the target chat or username of the target supergroup (in the format 
+    :param chat_id: Unique identifier for the target chat or username of the target supergroup (in the format
         @supergroupusername)
     :type chat_id: :obj:`int` or :obj:`str`
 
@@ -3245,7 +3596,7 @@ class BotCommandScopeChat(BotCommandScope):
     """
 
     def __init__(self, chat_id=None):
-        super(BotCommandScopeChat, self).__init__(type='chat', chat_id=chat_id)
+        super(BotCommandScopeChat, self).__init__(type="chat", chat_id=chat_id)
 
 
 class BotCommandScopeChatAdministrators(BotCommandScope):
@@ -3257,7 +3608,7 @@ class BotCommandScopeChatAdministrators(BotCommandScope):
     :param type: Scope type, must be chat_administrators
     :type type: :obj:`str`
 
-    :param chat_id: Unique identifier for the target chat or username of the target supergroup (in the format 
+    :param chat_id: Unique identifier for the target chat or username of the target supergroup (in the format
         @supergroupusername)
     :type chat_id: :obj:`int` or :obj:`str`
 
@@ -3267,7 +3618,8 @@ class BotCommandScopeChatAdministrators(BotCommandScope):
 
     def __init__(self, chat_id=None):
         super(BotCommandScopeChatAdministrators, self).__init__(
-            type='chat_administrators', chat_id=chat_id)
+            type="chat_administrators", chat_id=chat_id
+        )
 
 
 class BotCommandScopeChatMember(BotCommandScope):
@@ -3279,7 +3631,7 @@ class BotCommandScopeChatMember(BotCommandScope):
     :param type: Scope type, must be chat_member
     :type type: :obj:`str`
 
-    :param chat_id: Unique identifier for the target chat or username of the target supergroup (in the format 
+    :param chat_id: Unique identifier for the target chat or username of the target supergroup (in the format
         @supergroupusername)
     :type chat_id: :obj:`int` or :obj:`str`
 
@@ -3292,10 +3644,12 @@ class BotCommandScopeChatMember(BotCommandScope):
 
     def __init__(self, chat_id=None, user_id=None):
         super(BotCommandScopeChatMember, self).__init__(
-            type='chat_member', chat_id=chat_id, user_id=user_id)
+            type="chat_member", chat_id=chat_id, user_id=user_id
+        )
 
 
 # InlineQuery
+
 
 class InlineQuery(JsonDeserializable):
     """
@@ -3315,9 +3669,9 @@ class InlineQuery(JsonDeserializable):
     :param offset: Offset of the results to be returned, can be controlled by the bot
     :type offset: :obj:`str`
 
-    :param chat_type: Optional. Type of the chat from which the inline query was sent. Can be either “sender” for a private 
-        chat with the inline query sender, “private”, “group”, “supergroup”, or “channel”. The chat type should be always 
-        known for requests sent from official clients and most third-party clients, unless the request was sent from a secret 
+    :param chat_type: Optional. Type of the chat from which the inline query was sent. Can be either “sender” for a private
+        chat with the inline query sender, “private”, “group”, “supergroup”, or “channel”. The chat type should be always
+        known for requests sent from official clients and most third-party clients, unless the request was sent from a secret
         chat
     :type chat_type: :obj:`str`
 
@@ -3327,17 +3681,20 @@ class InlineQuery(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.InlineQuery`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['from_user'] = User.de_json(obj.pop('from'))
-        if 'location' in obj:
-            obj['location'] = Location.de_json(obj['location'])
+        obj["from_user"] = User.de_json(obj.pop("from"))
+        if "location" in obj:
+            obj["location"] = Location.de_json(obj["location"])
         return cls(**obj)
 
-    def __init__(self, id, from_user, query, offset, chat_type=None, location=None, **kwargs):
+    def __init__(
+        self, id, from_user, query, offset, chat_type=None, location=None, **kwargs
+    ):
         self.id: str = id
         self.from_user: User = from_user
         self.query: str = query
@@ -3355,11 +3712,11 @@ class InputTextMessageContent(Dictionaryable):
     :param message_text: Text of the message to be sent, 1-4096 characters
     :type message_text: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the message text. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the message text. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param entities: Optional. List of special entities that appear in message text, which can be specified instead of 
+    :param entities: Optional. List of special entities that appear in message text, which can be specified instead of
         parse_mode
     :type entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -3370,21 +3727,27 @@ class InputTextMessageContent(Dictionaryable):
     :rtype: :class:`telebot.types.InputTextMessageContent`
     """
 
-    def __init__(self, message_text, parse_mode=None, entities=None, disable_web_page_preview=None):
+    def __init__(
+        self,
+        message_text,
+        parse_mode=None,
+        entities=None,
+        disable_web_page_preview=None,
+    ):
         self.message_text: str = message_text
         self.parse_mode: str = parse_mode
         self.entities: List[MessageEntity] = entities
         self.disable_web_page_preview: bool = disable_web_page_preview
 
     def to_dict(self):
-        json_dict = {'message_text': self.message_text}
+        json_dict = {"message_text": self.message_text}
         if self.parse_mode:
-            json_dict['parse_mode'] = self.parse_mode
+            json_dict["parse_mode"] = self.parse_mode
         if self.entities:
-            json_dict['entities'] = MessageEntity.to_list_of_dicts(
+            json_dict["entities"] = MessageEntity.to_list_of_dicts(
                 self.entities)
         if self.disable_web_page_preview is not None:
-            json_dict['disable_web_page_preview'] = self.disable_web_page_preview
+            json_dict["disable_web_page_preview"] = self.disable_web_page_preview
         return json_dict
 
 
@@ -3403,15 +3766,15 @@ class InputLocationMessageContent(Dictionaryable):
     :param horizontal_accuracy: Optional. The radius of uncertainty for the location, measured in meters; 0-1500
     :type horizontal_accuracy: :obj:`float` number
 
-    :param live_period: Optional. Period in seconds for which the location can be updated, should be between 60 and 
+    :param live_period: Optional. Period in seconds for which the location can be updated, should be between 60 and
         86400.
     :type live_period: :obj:`int`
 
-    :param heading: Optional. For live locations, a direction in which the user is moving, in degrees. Must be between 1 
+    :param heading: Optional. For live locations, a direction in which the user is moving, in degrees. Must be between 1
         and 360 if specified.
     :type heading: :obj:`int`
 
-    :param proximity_alert_radius: Optional. For live locations, a maximum distance for proximity alerts about 
+    :param proximity_alert_radius: Optional. For live locations, a maximum distance for proximity alerts about
         approaching another chat member, in meters. Must be between 1 and 100000 if specified.
     :type proximity_alert_radius: :obj:`int`
 
@@ -3419,7 +3782,15 @@ class InputLocationMessageContent(Dictionaryable):
     :rtype: :class:`telebot.types.InputLocationMessageContent`
     """
 
-    def __init__(self, latitude, longitude, horizontal_accuracy=None, live_period=None, heading=None, proximity_alert_radius=None):
+    def __init__(
+        self,
+        latitude,
+        longitude,
+        horizontal_accuracy=None,
+        live_period=None,
+        heading=None,
+        proximity_alert_radius=None,
+    ):
         self.latitude: float = latitude
         self.longitude: float = longitude
         self.horizontal_accuracy: float = horizontal_accuracy
@@ -3428,15 +3799,15 @@ class InputLocationMessageContent(Dictionaryable):
         self.proximity_alert_radius: int = proximity_alert_radius
 
     def to_dict(self):
-        json_dict = {'latitude': self.latitude, 'longitude': self.longitude}
+        json_dict = {"latitude": self.latitude, "longitude": self.longitude}
         if self.horizontal_accuracy:
-            json_dict['horizontal_accuracy'] = self.horizontal_accuracy
+            json_dict["horizontal_accuracy"] = self.horizontal_accuracy
         if self.live_period:
-            json_dict['live_period'] = self.live_period
+            json_dict["live_period"] = self.live_period
         if self.heading:
-            json_dict['heading'] = self.heading
+            json_dict["heading"] = self.heading
         if self.proximity_alert_radius:
-            json_dict['proximity_alert_radius'] = self.proximity_alert_radius
+            json_dict["proximity_alert_radius"] = self.proximity_alert_radius
         return json_dict
 
 
@@ -3461,7 +3832,7 @@ class InputVenueMessageContent(Dictionaryable):
     :param foursquare_id: Optional. Foursquare identifier of the venue, if known
     :type foursquare_id: :obj:`str`
 
-    :param foursquare_type: Optional. Foursquare type of the venue, if known. (For example, 
+    :param foursquare_type: Optional. Foursquare type of the venue, if known. (For example,
         “arts_entertainment/default”, “arts_entertainment/aquarium” or “food/icecream”.)
     :type foursquare_type: :obj:`str`
 
@@ -3475,8 +3846,17 @@ class InputVenueMessageContent(Dictionaryable):
     :rtype: :class:`telebot.types.InputVenueMessageContent`
     """
 
-    def __init__(self, latitude, longitude, title, address, foursquare_id=None, foursquare_type=None,
-                 google_place_id=None, google_place_type=None):
+    def __init__(
+        self,
+        latitude,
+        longitude,
+        title,
+        address,
+        foursquare_id=None,
+        foursquare_type=None,
+        google_place_id=None,
+        google_place_type=None,
+    ):
         self.latitude: float = latitude
         self.longitude: float = longitude
         self.title: str = title
@@ -3488,19 +3868,19 @@ class InputVenueMessageContent(Dictionaryable):
 
     def to_dict(self):
         json_dict = {
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'title': self.title,
-            'address': self.address
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "title": self.title,
+            "address": self.address,
         }
         if self.foursquare_id:
-            json_dict['foursquare_id'] = self.foursquare_id
+            json_dict["foursquare_id"] = self.foursquare_id
         if self.foursquare_type:
-            json_dict['foursquare_type'] = self.foursquare_type
+            json_dict["foursquare_type"] = self.foursquare_type
         if self.google_place_id:
-            json_dict['google_place_id'] = self.google_place_id
+            json_dict["google_place_id"] = self.google_place_id
         if self.google_place_type:
-            json_dict['google_place_type'] = self.google_place_type
+            json_dict["google_place_type"] = self.google_place_type
         return json_dict
 
 
@@ -3533,12 +3913,12 @@ class InputContactMessageContent(Dictionaryable):
         self.vcard: str = vcard
 
     def to_dict(self):
-        json_dict = {'phone_number': self.phone_number,
-                     'first_name': self.first_name}
+        json_dict = {"phone_number": self.phone_number,
+                     "first_name": self.first_name}
         if self.last_name:
-            json_dict['last_name'] = self.last_name
+            json_dict["last_name"] = self.last_name
         if self.vcard:
-            json_dict['vcard'] = self.vcard
+            json_dict["vcard"] = self.vcard
         return json_dict
 
 
@@ -3554,7 +3934,7 @@ class InputInvoiceMessageContent(Dictionaryable):
     :param description: Product description, 1-255 characters
     :type description: :obj:`str`
 
-    :param payload: Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your 
+    :param payload: Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your
         internal processes.
     :type payload: :obj:`str`
 
@@ -3564,26 +3944,26 @@ class InputInvoiceMessageContent(Dictionaryable):
     :param currency: Three-letter ISO 4217 currency code, see more on currencies
     :type currency: :obj:`str`
 
-    :param prices: Price breakdown, a JSON-serialized list of components (e.g. product price, tax, discount, delivery 
+    :param prices: Price breakdown, a JSON-serialized list of components (e.g. product price, tax, discount, delivery
         cost, delivery tax, bonus, etc.)
     :type prices: :obj:`list` of :class:`telebot.types.LabeledPrice`
 
-    :param max_tip_amount: Optional. The maximum accepted amount for tips in the smallest units of the currency 
-        (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass max_tip_amount = 145. See the exp 
-        parameter in currencies.json, it shows the number of digits past the decimal point for each currency (2 for the 
+    :param max_tip_amount: Optional. The maximum accepted amount for tips in the smallest units of the currency
+        (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass max_tip_amount = 145. See the exp
+        parameter in currencies.json, it shows the number of digits past the decimal point for each currency (2 for the
         majority of currencies). Defaults to 0
     :type max_tip_amount: :obj:`int`
 
-    :param suggested_tip_amounts: Optional. A JSON-serialized array of suggested amounts of tip in the smallest units 
-        of the currency (integer, not float/double). At most 4 suggested tip amounts can be specified. The suggested tip 
+    :param suggested_tip_amounts: Optional. A JSON-serialized array of suggested amounts of tip in the smallest units
+        of the currency (integer, not float/double). At most 4 suggested tip amounts can be specified. The suggested tip
         amounts must be positive, passed in a strictly increased order and must not exceed max_tip_amount.
     :type suggested_tip_amounts: :obj:`list` of :obj:`int`
 
-    :param provider_data: Optional. A JSON-serialized object for data about the invoice, which will be shared with the 
+    :param provider_data: Optional. A JSON-serialized object for data about the invoice, which will be shared with the
         payment provider. A detailed description of the required fields should be provided by the payment provider.
     :type provider_data: :obj:`str`
 
-    :param photo_url: Optional. URL of the product photo for the invoice. Can be a photo of the goods or a marketing image 
+    :param photo_url: Optional. URL of the product photo for the invoice. Can be a photo of the goods or a marketing image
         for a service.
     :type photo_url: :obj:`str`
 
@@ -3605,7 +3985,7 @@ class InputInvoiceMessageContent(Dictionaryable):
     :param need_email: Optional. Pass True, if you require the user's email address to complete the order
     :type need_email: :obj:`bool`
 
-    :param need_shipping_address: Optional. Pass True, if you require the user's shipping address to complete the 
+    :param need_shipping_address: Optional. Pass True, if you require the user's shipping address to complete the
         order
     :type need_shipping_address: :obj:`bool`
 
@@ -3622,12 +4002,29 @@ class InputInvoiceMessageContent(Dictionaryable):
     :rtype: :class:`telebot.types.InputInvoiceMessageContent`
     """
 
-    def __init__(self, title, description, payload, provider_token, currency, prices,
-                 max_tip_amount=None, suggested_tip_amounts=None, provider_data=None,
-                 photo_url=None, photo_size=None, photo_width=None, photo_height=None,
-                 need_name=None, need_phone_number=None, need_email=None, need_shipping_address=None,
-                 send_phone_number_to_provider=None, send_email_to_provider=None,
-                 is_flexible=None):
+    def __init__(
+        self,
+        title,
+        description,
+        payload,
+        provider_token,
+        currency,
+        prices,
+        max_tip_amount=None,
+        suggested_tip_amounts=None,
+        provider_data=None,
+        photo_url=None,
+        photo_size=None,
+        photo_width=None,
+        photo_height=None,
+        need_name=None,
+        need_phone_number=None,
+        need_email=None,
+        need_shipping_address=None,
+        send_phone_number_to_provider=None,
+        send_email_to_provider=None,
+        is_flexible=None,
+    ):
         self.title: str = title
         self.description: str = description
         self.payload: str = payload
@@ -3645,47 +4042,51 @@ class InputInvoiceMessageContent(Dictionaryable):
         self.need_phone_number: Optional[bool] = need_phone_number
         self.need_email: Optional[bool] = need_email
         self.need_shipping_address: Optional[bool] = need_shipping_address
-        self.send_phone_number_to_provider: Optional[bool] = send_phone_number_to_provider
+        self.send_phone_number_to_provider: Optional[
+            bool
+        ] = send_phone_number_to_provider
         self.send_email_to_provider: Optional[bool] = send_email_to_provider
         self.is_flexible: Optional[bool] = is_flexible
 
     def to_dict(self):
         json_dict = {
-            'title': self.title,
-            'description': self.description,
-            'payload': self.payload,
-            'provider_token': self.provider_token,
-            'currency': self.currency,
-            'prices': [LabeledPrice.to_dict(lp) for lp in self.prices]
+            "title": self.title,
+            "description": self.description,
+            "payload": self.payload,
+            "provider_token": self.provider_token,
+            "currency": self.currency,
+            "prices": [LabeledPrice.to_dict(lp) for lp in self.prices],
         }
         if self.max_tip_amount:
-            json_dict['max_tip_amount'] = self.max_tip_amount
+            json_dict["max_tip_amount"] = self.max_tip_amount
         if self.suggested_tip_amounts:
-            json_dict['suggested_tip_amounts'] = self.suggested_tip_amounts
+            json_dict["suggested_tip_amounts"] = self.suggested_tip_amounts
         if self.provider_data:
-            json_dict['provider_data'] = self.provider_data
+            json_dict["provider_data"] = self.provider_data
         if self.photo_url:
-            json_dict['photo_url'] = self.photo_url
+            json_dict["photo_url"] = self.photo_url
         if self.photo_size:
-            json_dict['photo_size'] = self.photo_size
+            json_dict["photo_size"] = self.photo_size
         if self.photo_width:
-            json_dict['photo_width'] = self.photo_width
+            json_dict["photo_width"] = self.photo_width
         if self.photo_height:
-            json_dict['photo_height'] = self.photo_height
+            json_dict["photo_height"] = self.photo_height
         if self.need_name is not None:
-            json_dict['need_name'] = self.need_name
+            json_dict["need_name"] = self.need_name
         if self.need_phone_number is not None:
-            json_dict['need_phone_number'] = self.need_phone_number
+            json_dict["need_phone_number"] = self.need_phone_number
         if self.need_email is not None:
-            json_dict['need_email'] = self.need_email
+            json_dict["need_email"] = self.need_email
         if self.need_shipping_address is not None:
-            json_dict['need_shipping_address'] = self.need_shipping_address
+            json_dict["need_shipping_address"] = self.need_shipping_address
         if self.send_phone_number_to_provider is not None:
-            json_dict['send_phone_number_to_provider'] = self.send_phone_number_to_provider
+            json_dict[
+                "send_phone_number_to_provider"
+            ] = self.send_phone_number_to_provider
         if self.send_email_to_provider is not None:
-            json_dict['send_email_to_provider'] = self.send_email_to_provider
+            json_dict["send_email_to_provider"] = self.send_email_to_provider
         if self.is_flexible is not None:
-            json_dict['is_flexible'] = self.is_flexible
+            json_dict["is_flexible"] = self.is_flexible
         return json_dict
 
 
@@ -3704,7 +4105,7 @@ class ChosenInlineResult(JsonDeserializable):
     :param location: Optional. Sender location, only for bots that require user location
     :type location: :class:`telebot.types.Location`
 
-    :param inline_message_id: Optional. Identifier of the sent inline message. Available only if there is an inline 
+    :param inline_message_id: Optional. Identifier of the sent inline message. Available only if there is an inline
         keyboard attached to the message. Will be also received in callback queries and can be used to edit the message.
     :type inline_message_id: :obj:`str`
 
@@ -3714,17 +4115,26 @@ class ChosenInlineResult(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChosenInlineResult`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['from_user'] = User.de_json(obj.pop('from'))
-        if 'location' in obj:
-            obj['location'] = Location.de_json(obj['location'])
+        obj["from_user"] = User.de_json(obj.pop("from"))
+        if "location" in obj:
+            obj["location"] = Location.de_json(obj["location"])
         return cls(**obj)
 
-    def __init__(self, result_id, from_user, query, location=None, inline_message_id=None, **kwargs):
+    def __init__(
+        self,
+        result_id,
+        from_user,
+        query,
+        location=None,
+        inline_message_id=None,
+        **kwargs
+    ):
         self.result_id: str = result_id
         self.from_user: User = from_user
         self.location: Location = location
@@ -3759,10 +4169,20 @@ class InlineQueryResultBase(ABC, Dictionaryable, JsonSerializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#inlinequeryresult
     """
+
     # noinspection PyShadowingBuiltins
 
-    def __init__(self, type, id, title=None, caption=None, input_message_content=None,
-                 reply_markup=None, caption_entities=None, parse_mode=None):
+    def __init__(
+        self,
+        type,
+        id,
+        title=None,
+        caption=None,
+        input_message_content=None,
+        reply_markup=None,
+        caption_entities=None,
+        parse_mode=None,
+    ):
         self.type = type
         self.id = id
         self.title = title
@@ -3776,23 +4196,21 @@ class InlineQueryResultBase(ABC, Dictionaryable, JsonSerializable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        json_dict = {
-            'type': self.type,
-            'id': self.id
-        }
+        json_dict = {"type": self.type, "id": self.id}
         if self.title:
-            json_dict['title'] = self.title
+            json_dict["title"] = self.title
         if self.caption:
-            json_dict['caption'] = self.caption
+            json_dict["caption"] = self.caption
         if self.input_message_content:
-            json_dict['input_message_content'] = self.input_message_content.to_dict()
+            json_dict["input_message_content"] = self.input_message_content.to_dict()
         if self.reply_markup:
-            json_dict['reply_markup'] = self.reply_markup.to_dict()
+            json_dict["reply_markup"] = self.reply_markup.to_dict()
         if self.caption_entities:
-            json_dict['caption_entities'] = MessageEntity.to_list_of_dicts(
-                self.caption_entities)
+            json_dict["caption_entities"] = MessageEntity.to_list_of_dicts(
+                self.caption_entities
+            )
         if self.parse_mode:
-            json_dict['parse_mode'] = self.parse_mode
+            json_dict["parse_mode"] = self.parse_mode
         return json_dict
 
 
@@ -3802,13 +4220,14 @@ class SentWebAppMessage(JsonDeserializable, Dictionaryable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#sentwebappmessage
 
-    :param inline_message_id: Optional. Identifier of the sent inline message. Available only if there is an inline 
+    :param inline_message_id: Optional. Identifier of the sent inline message. Available only if there is an inline
         keyboard attached to the message.
     :type inline_message_id: :obj:`str`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.SentWebAppMessage`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -3822,7 +4241,7 @@ class SentWebAppMessage(JsonDeserializable, Dictionaryable):
     def to_dict(self):
         json_dict = {}
         if self.inline_message_id:
-            json_dict['inline_message_id'] = self.inline_message_id
+            json_dict["inline_message_id"] = self.inline_message_id
         return json_dict
 
 
@@ -3869,10 +4288,26 @@ class InlineQueryResultArticle(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultArticle`
     """
 
-    def __init__(self, id, title, input_message_content, reply_markup=None,
-                 url=None, hide_url=None, description=None, thumb_url=None, thumb_width=None, thumb_height=None):
-        super().__init__('article', id, title=title,
-                         input_message_content=input_message_content, reply_markup=reply_markup)
+    def __init__(
+        self,
+        id,
+        title,
+        input_message_content,
+        reply_markup=None,
+        url=None,
+        hide_url=None,
+        description=None,
+        thumb_url=None,
+        thumb_width=None,
+        thumb_height=None,
+    ):
+        super().__init__(
+            "article",
+            id,
+            title=title,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+        )
         self.url = url
         self.hide_url = hide_url
         self.description = description
@@ -3883,17 +4318,17 @@ class InlineQueryResultArticle(InlineQueryResultBase):
     def to_dict(self):
         json_dict = super().to_dict()
         if self.url:
-            json_dict['url'] = self.url
+            json_dict["url"] = self.url
         if self.hide_url:
-            json_dict['hide_url'] = self.hide_url
+            json_dict["hide_url"] = self.hide_url
         if self.description:
-            json_dict['description'] = self.description
+            json_dict["description"] = self.description
         if self.thumb_url:
-            json_dict['thumb_url'] = self.thumb_url
+            json_dict["thumb_url"] = self.thumb_url
         if self.thumb_width:
-            json_dict['thumb_width'] = self.thumb_width
+            json_dict["thumb_width"] = self.thumb_width
         if self.thumb_height:
-            json_dict['thumb_height'] = self.thumb_height
+            json_dict["thumb_height"] = self.thumb_height
         return json_dict
 
 
@@ -3930,11 +4365,11 @@ class InlineQueryResultPhoto(InlineQueryResultBase):
     :param caption: Optional. Caption of the photo to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the photo caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the photo caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -3948,11 +4383,31 @@ class InlineQueryResultPhoto(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultPhoto`
     """
 
-    def __init__(self, id, photo_url, thumb_url, photo_width=None, photo_height=None, title=None,
-                 description=None, caption=None, caption_entities=None, parse_mode=None, reply_markup=None, input_message_content=None):
-        super().__init__('photo', id, title=title, caption=caption,
-                         input_message_content=input_message_content, reply_markup=reply_markup,
-                         parse_mode=parse_mode, caption_entities=caption_entities)
+    def __init__(
+        self,
+        id,
+        photo_url,
+        thumb_url,
+        photo_width=None,
+        photo_height=None,
+        title=None,
+        description=None,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
+        super().__init__(
+            "photo",
+            id,
+            title=title,
+            caption=caption,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.photo_url = photo_url
         self.thumb_url = thumb_url
         self.photo_width = photo_width
@@ -3961,14 +4416,14 @@ class InlineQueryResultPhoto(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['photo_url'] = self.photo_url
-        json_dict['thumb_url'] = self.thumb_url
+        json_dict["photo_url"] = self.photo_url
+        json_dict["thumb_url"] = self.thumb_url
         if self.photo_width:
-            json_dict['photo_width'] = self.photo_width
+            json_dict["photo_width"] = self.photo_width
         if self.photo_height:
-            json_dict['photo_height'] = self.photo_height
+            json_dict["photo_height"] = self.photo_height
         if self.description:
-            json_dict['description'] = self.description
+            json_dict["description"] = self.description
         return json_dict
 
 
@@ -3999,7 +4454,7 @@ class InlineQueryResultGif(InlineQueryResultBase):
     :param thumb_url: URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for the result
     :type thumb_url: :obj:`str`
 
-    :param thumb_mime_type: Optional. MIME type of the thumbnail, must be one of “image/jpeg”, “image/gif”, or 
+    :param thumb_mime_type: Optional. MIME type of the thumbnail, must be one of “image/jpeg”, “image/gif”, or
         “video/mp4”. Defaults to “image/jpeg”
     :type thumb_mime_type: :obj:`str`
 
@@ -4012,7 +4467,7 @@ class InlineQueryResultGif(InlineQueryResultBase):
     :param parse_mode: Optional. Mode for parsing entities in the caption. See formatting options for more details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4026,13 +4481,32 @@ class InlineQueryResultGif(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultGif`
     """
 
-    def __init__(self, id, gif_url, thumb_url, gif_width=None, gif_height=None,
-                 title=None, caption=None, caption_entities=None,
-                 reply_markup=None, input_message_content=None, gif_duration=None, parse_mode=None,
-                 thumb_mime_type=None):
-        super().__init__('gif', id, title=title, caption=caption,
-                         input_message_content=input_message_content, reply_markup=reply_markup,
-                         parse_mode=parse_mode, caption_entities=caption_entities)
+    def __init__(
+        self,
+        id,
+        gif_url,
+        thumb_url,
+        gif_width=None,
+        gif_height=None,
+        title=None,
+        caption=None,
+        caption_entities=None,
+        reply_markup=None,
+        input_message_content=None,
+        gif_duration=None,
+        parse_mode=None,
+        thumb_mime_type=None,
+    ):
+        super().__init__(
+            "gif",
+            id,
+            title=title,
+            caption=caption,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.gif_url = gif_url
         self.gif_width = gif_width
         self.gif_height = gif_height
@@ -4042,16 +4516,16 @@ class InlineQueryResultGif(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['gif_url'] = self.gif_url
+        json_dict["gif_url"] = self.gif_url
         if self.gif_width:
-            json_dict['gif_width'] = self.gif_width
+            json_dict["gif_width"] = self.gif_width
         if self.gif_height:
-            json_dict['gif_height'] = self.gif_height
-        json_dict['thumb_url'] = self.thumb_url
+            json_dict["gif_height"] = self.gif_height
+        json_dict["thumb_url"] = self.thumb_url
         if self.gif_duration:
-            json_dict['gif_duration'] = self.gif_duration
+            json_dict["gif_duration"] = self.gif_duration
         if self.thumb_mime_type:
-            json_dict['thumb_mime_type'] = self.thumb_mime_type
+            json_dict["thumb_mime_type"] = self.thumb_mime_type
         return json_dict
 
 
@@ -4082,7 +4556,7 @@ class InlineQueryResultMpeg4Gif(InlineQueryResultBase):
     :param thumb_url: URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for the result
     :type thumb_url: :obj:`str`
 
-    :param thumb_mime_type: Optional. MIME type of the thumbnail, must be one of “image/jpeg”, “image/gif”, or 
+    :param thumb_mime_type: Optional. MIME type of the thumbnail, must be one of “image/jpeg”, “image/gif”, or
         “video/mp4”. Defaults to “image/jpeg”
     :type thumb_mime_type: :obj:`str`
 
@@ -4095,7 +4569,7 @@ class InlineQueryResultMpeg4Gif(InlineQueryResultBase):
     :param parse_mode: Optional. Mode for parsing entities in the caption. See formatting options for more details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4109,13 +4583,32 @@ class InlineQueryResultMpeg4Gif(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultMpeg4Gif`
     """
 
-    def __init__(self, id, mpeg4_url, thumb_url, mpeg4_width=None, mpeg4_height=None,
-                 title=None, caption=None, caption_entities=None,
-                 parse_mode=None, reply_markup=None, input_message_content=None, mpeg4_duration=None,
-                 thumb_mime_type=None):
-        super().__init__('mpeg4_gif', id, title=title, caption=caption,
-                         input_message_content=input_message_content, reply_markup=reply_markup,
-                         parse_mode=parse_mode, caption_entities=caption_entities)
+    def __init__(
+        self,
+        id,
+        mpeg4_url,
+        thumb_url,
+        mpeg4_width=None,
+        mpeg4_height=None,
+        title=None,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+        mpeg4_duration=None,
+        thumb_mime_type=None,
+    ):
+        super().__init__(
+            "mpeg4_gif",
+            id,
+            title=title,
+            caption=caption,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.mpeg4_url = mpeg4_url
         self.mpeg4_width = mpeg4_width
         self.mpeg4_height = mpeg4_height
@@ -4125,16 +4618,16 @@ class InlineQueryResultMpeg4Gif(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['mpeg4_url'] = self.mpeg4_url
+        json_dict["mpeg4_url"] = self.mpeg4_url
         if self.mpeg4_width:
-            json_dict['mpeg4_width'] = self.mpeg4_width
+            json_dict["mpeg4_width"] = self.mpeg4_width
         if self.mpeg4_height:
-            json_dict['mpeg4_height'] = self.mpeg4_height
-        json_dict['thumb_url'] = self.thumb_url
+            json_dict["mpeg4_height"] = self.mpeg4_height
+        json_dict["thumb_url"] = self.thumb_url
         if self.mpeg4_duration:
-            json_dict['mpeg4_duration '] = self.mpeg4_duration
+            json_dict["mpeg4_duration "] = self.mpeg4_duration
         if self.thumb_mime_type:
-            json_dict['thumb_mime_type'] = self.thumb_mime_type
+            json_dict["thumb_mime_type"] = self.thumb_mime_type
         return json_dict
 
 
@@ -4165,11 +4658,11 @@ class InlineQueryResultVideo(InlineQueryResultBase):
     :param caption: Optional. Caption of the video to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the video caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the video caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4188,7 +4681,7 @@ class InlineQueryResultVideo(InlineQueryResultBase):
     :param reply_markup: Optional. Inline keyboard attached to the message
     :type reply_markup: :class:`telebot.types.InlineKeyboardMarkup`
 
-    :param input_message_content: Optional. Content of the message to be sent instead of the video. This field is 
+    :param input_message_content: Optional. Content of the message to be sent instead of the video. This field is
         required if InlineQueryResultVideo is used to send an HTML-page as a result (e.g., a YouTube video).
     :type input_message_content: :class:`telebot.types.InputMessageContent`
 
@@ -4196,13 +4689,33 @@ class InlineQueryResultVideo(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultVideo`
     """
 
-    def __init__(self, id, video_url, mime_type, thumb_url,
-                 title, caption=None, caption_entities=None, parse_mode=None,
-                 video_width=None, video_height=None, video_duration=None,
-                 description=None, reply_markup=None, input_message_content=None):
-        super().__init__('video', id, title=title, caption=caption,
-                         input_message_content=input_message_content, reply_markup=reply_markup,
-                         parse_mode=parse_mode, caption_entities=caption_entities)
+    def __init__(
+        self,
+        id,
+        video_url,
+        mime_type,
+        thumb_url,
+        title,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        video_width=None,
+        video_height=None,
+        video_duration=None,
+        description=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
+        super().__init__(
+            "video",
+            id,
+            title=title,
+            caption=caption,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.video_url = video_url
         self.mime_type = mime_type
         self.thumb_url = thumb_url
@@ -4213,15 +4726,15 @@ class InlineQueryResultVideo(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['video_url'] = self.video_url
-        json_dict['mime_type'] = self.mime_type
-        json_dict['thumb_url'] = self.thumb_url
+        json_dict["video_url"] = self.video_url
+        json_dict["mime_type"] = self.mime_type
+        json_dict["thumb_url"] = self.thumb_url
         if self.video_height:
-            json_dict['video_height'] = self.video_height
+            json_dict["video_height"] = self.video_height
         if self.video_duration:
-            json_dict['video_duration'] = self.video_duration
+            json_dict["video_duration"] = self.video_duration
         if self.description:
-            json_dict['description'] = self.description
+            json_dict["description"] = self.description
         return json_dict
 
 
@@ -4246,11 +4759,11 @@ class InlineQueryResultAudio(InlineQueryResultBase):
     :param caption: Optional. Caption, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the audio caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the audio caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4270,23 +4783,40 @@ class InlineQueryResultAudio(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultAudio`
     """
 
-    def __init__(self, id, audio_url, title,
-                 caption=None, caption_entities=None, parse_mode=None, performer=None,
-                 audio_duration=None, reply_markup=None, input_message_content=None):
-        super().__init__('audio', id, title=title, caption=caption,
-                         input_message_content=input_message_content, reply_markup=reply_markup,
-                         parse_mode=parse_mode, caption_entities=caption_entities)
+    def __init__(
+        self,
+        id,
+        audio_url,
+        title,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        performer=None,
+        audio_duration=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
+        super().__init__(
+            "audio",
+            id,
+            title=title,
+            caption=caption,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.audio_url = audio_url
         self.performer = performer
         self.audio_duration = audio_duration
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['audio_url'] = self.audio_url
+        json_dict["audio_url"] = self.audio_url
         if self.performer:
-            json_dict['performer'] = self.performer
+            json_dict["performer"] = self.performer
         if self.audio_duration:
-            json_dict['audio_duration'] = self.audio_duration
+            json_dict["audio_duration"] = self.audio_duration
         return json_dict
 
 
@@ -4311,11 +4841,11 @@ class InlineQueryResultVoice(InlineQueryResultBase):
     :param caption: Optional. Caption, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the voice message caption. See formatting options for 
+    :param parse_mode: Optional. Mode for parsing entities in the voice message caption. See formatting options for
         more details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4332,19 +4862,36 @@ class InlineQueryResultVoice(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultVoice`
     """
 
-    def __init__(self, id, voice_url, title, caption=None, caption_entities=None,
-                 parse_mode=None, voice_duration=None, reply_markup=None, input_message_content=None):
-        super().__init__('voice', id, title=title, caption=caption,
-                         input_message_content=input_message_content, reply_markup=reply_markup,
-                         parse_mode=parse_mode, caption_entities=caption_entities)
+    def __init__(
+        self,
+        id,
+        voice_url,
+        title,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        voice_duration=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
+        super().__init__(
+            "voice",
+            id,
+            title=title,
+            caption=caption,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.voice_url = voice_url
         self.voice_duration = voice_duration
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['voice_url'] = self.voice_url
+        json_dict["voice_url"] = self.voice_url
         if self.voice_duration:
-            json_dict['voice_duration'] = self.voice_duration
+            json_dict["voice_duration"] = self.voice_duration
         return json_dict
 
 
@@ -4366,11 +4913,11 @@ class InlineQueryResultDocument(InlineQueryResultBase):
     :param caption: Optional. Caption of the document to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the document caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the document caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4402,12 +4949,32 @@ class InlineQueryResultDocument(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultDocument`
     """
 
-    def __init__(self, id, title, document_url, mime_type, caption=None, caption_entities=None,
-                 parse_mode=None, description=None, reply_markup=None, input_message_content=None,
-                 thumb_url=None, thumb_width=None, thumb_height=None):
-        super().__init__('document', id, title=title, caption=caption,
-                         input_message_content=input_message_content, reply_markup=reply_markup,
-                         parse_mode=parse_mode, caption_entities=caption_entities)
+    def __init__(
+        self,
+        id,
+        title,
+        document_url,
+        mime_type,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        description=None,
+        reply_markup=None,
+        input_message_content=None,
+        thumb_url=None,
+        thumb_width=None,
+        thumb_height=None,
+    ):
+        super().__init__(
+            "document",
+            id,
+            title=title,
+            caption=caption,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.document_url = document_url
         self.mime_type = mime_type
         self.description = description
@@ -4417,16 +4984,16 @@ class InlineQueryResultDocument(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['document_url'] = self.document_url
-        json_dict['mime_type'] = self.mime_type
+        json_dict["document_url"] = self.document_url
+        json_dict["mime_type"] = self.mime_type
         if self.description:
-            json_dict['description'] = self.description
+            json_dict["description"] = self.description
         if self.thumb_url:
-            json_dict['thumb_url'] = self.thumb_url
+            json_dict["thumb_url"] = self.thumb_url
         if self.thumb_width:
-            json_dict['thumb_width'] = self.thumb_width
+            json_dict["thumb_width"] = self.thumb_width
         if self.thumb_height:
-            json_dict['thumb_height'] = self.thumb_height
+            json_dict["thumb_height"] = self.thumb_height
         return json_dict
 
 
@@ -4454,15 +5021,15 @@ class InlineQueryResultLocation(InlineQueryResultBase):
     :param horizontal_accuracy: Optional. The radius of uncertainty for the location, measured in meters; 0-1500
     :type horizontal_accuracy: :obj:`float` number
 
-    :param live_period: Optional. Period in seconds for which the location can be updated, should be between 60 and 
+    :param live_period: Optional. Period in seconds for which the location can be updated, should be between 60 and
         86400.
     :type live_period: :obj:`int`
 
-    :param heading: Optional. For live locations, a direction in which the user is moving, in degrees. Must be between 1 
+    :param heading: Optional. For live locations, a direction in which the user is moving, in degrees. Must be between 1
         and 360 if specified.
     :type heading: :obj:`int`
 
-    :param proximity_alert_radius: Optional. For live locations, a maximum distance for proximity alerts about 
+    :param proximity_alert_radius: Optional. For live locations, a maximum distance for proximity alerts about
         approaching another chat member, in meters. Must be between 1 and 100000 if specified.
     :type proximity_alert_radius: :obj:`int`
 
@@ -4485,10 +5052,29 @@ class InlineQueryResultLocation(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultLocation`
     """
 
-    def __init__(self, id, title, latitude, longitude, horizontal_accuracy, live_period=None, reply_markup=None,
-                 input_message_content=None, thumb_url=None, thumb_width=None, thumb_height=None, heading=None, proximity_alert_radius=None):
-        super().__init__('location', id, title=title,
-                         input_message_content=input_message_content, reply_markup=reply_markup)
+    def __init__(
+        self,
+        id,
+        title,
+        latitude,
+        longitude,
+        horizontal_accuracy,
+        live_period=None,
+        reply_markup=None,
+        input_message_content=None,
+        thumb_url=None,
+        thumb_width=None,
+        thumb_height=None,
+        heading=None,
+        proximity_alert_radius=None,
+    ):
+        super().__init__(
+            "location",
+            id,
+            title=title,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+        )
         self.latitude = latitude
         self.longitude = longitude
         self.horizontal_accuracy = horizontal_accuracy
@@ -4501,22 +5087,22 @@ class InlineQueryResultLocation(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['latitude'] = self.latitude
-        json_dict['longitude'] = self.longitude
+        json_dict["latitude"] = self.latitude
+        json_dict["longitude"] = self.longitude
         if self.horizontal_accuracy:
-            json_dict['horizontal_accuracy'] = self.horizontal_accuracy
+            json_dict["horizontal_accuracy"] = self.horizontal_accuracy
         if self.live_period:
-            json_dict['live_period'] = self.live_period
+            json_dict["live_period"] = self.live_period
         if self.heading:
-            json_dict['heading'] = self.heading
+            json_dict["heading"] = self.heading
         if self.proximity_alert_radius:
-            json_dict['proximity_alert_radius'] = self.proximity_alert_radius
+            json_dict["proximity_alert_radius"] = self.proximity_alert_radius
         if self.thumb_url:
-            json_dict['thumb_url'] = self.thumb_url
+            json_dict["thumb_url"] = self.thumb_url
         if self.thumb_width:
-            json_dict['thumb_width'] = self.thumb_width
+            json_dict["thumb_width"] = self.thumb_width
         if self.thumb_height:
-            json_dict['thumb_height'] = self.thumb_height
+            json_dict["thumb_height"] = self.thumb_height
         return json_dict
 
 
@@ -4547,7 +5133,7 @@ class InlineQueryResultVenue(InlineQueryResultBase):
     :param foursquare_id: Optional. Foursquare identifier of the venue if known
     :type foursquare_id: :obj:`str`
 
-    :param foursquare_type: Optional. Foursquare type of the venue, if known. (For example, 
+    :param foursquare_type: Optional. Foursquare type of the venue, if known. (For example,
         “arts_entertainment/default”, “arts_entertainment/aquarium” or “food/icecream”.)
     :type foursquare_type: :obj:`str`
 
@@ -4576,11 +5162,30 @@ class InlineQueryResultVenue(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultVenue`
     """
 
-    def __init__(self, id, title, latitude, longitude, address, foursquare_id=None, foursquare_type=None,
-                 reply_markup=None, input_message_content=None, thumb_url=None,
-                 thumb_width=None, thumb_height=None, google_place_id=None, google_place_type=None):
-        super().__init__('venue', id, title=title,
-                         input_message_content=input_message_content, reply_markup=reply_markup)
+    def __init__(
+        self,
+        id,
+        title,
+        latitude,
+        longitude,
+        address,
+        foursquare_id=None,
+        foursquare_type=None,
+        reply_markup=None,
+        input_message_content=None,
+        thumb_url=None,
+        thumb_width=None,
+        thumb_height=None,
+        google_place_id=None,
+        google_place_type=None,
+    ):
+        super().__init__(
+            "venue",
+            id,
+            title=title,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+        )
         self.latitude = latitude
         self.longitude = longitude
         self.address = address
@@ -4594,23 +5199,23 @@ class InlineQueryResultVenue(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['latitude'] = self.latitude
-        json_dict['longitude'] = self.longitude
-        json_dict['address'] = self.address
+        json_dict["latitude"] = self.latitude
+        json_dict["longitude"] = self.longitude
+        json_dict["address"] = self.address
         if self.foursquare_id:
-            json_dict['foursquare_id'] = self.foursquare_id
+            json_dict["foursquare_id"] = self.foursquare_id
         if self.foursquare_type:
-            json_dict['foursquare_type'] = self.foursquare_type
+            json_dict["foursquare_type"] = self.foursquare_type
         if self.google_place_id:
-            json_dict['google_place_id'] = self.google_place_id
+            json_dict["google_place_id"] = self.google_place_id
         if self.google_place_type:
-            json_dict['google_place_type'] = self.google_place_type
+            json_dict["google_place_type"] = self.google_place_type
         if self.thumb_url:
-            json_dict['thumb_url'] = self.thumb_url
+            json_dict["thumb_url"] = self.thumb_url
         if self.thumb_width:
-            json_dict['thumb_width'] = self.thumb_width
+            json_dict["thumb_width"] = self.thumb_width
         if self.thumb_height:
-            json_dict['thumb_height'] = self.thumb_height
+            json_dict["thumb_height"] = self.thumb_height
         return json_dict
 
 
@@ -4657,11 +5262,25 @@ class InlineQueryResultContact(InlineQueryResultBase):
     :rtype: :class:`telebot.types.InlineQueryResultContact`
     """
 
-    def __init__(self, id, phone_number, first_name, last_name=None, vcard=None,
-                 reply_markup=None, input_message_content=None,
-                 thumb_url=None, thumb_width=None, thumb_height=None):
-        super().__init__('contact', id,
-                         input_message_content=input_message_content, reply_markup=reply_markup)
+    def __init__(
+        self,
+        id,
+        phone_number,
+        first_name,
+        last_name=None,
+        vcard=None,
+        reply_markup=None,
+        input_message_content=None,
+        thumb_url=None,
+        thumb_width=None,
+        thumb_height=None,
+    ):
+        super().__init__(
+            "contact",
+            id,
+            input_message_content=input_message_content,
+            reply_markup=reply_markup,
+        )
         self.phone_number = phone_number
         self.first_name = first_name
         self.last_name = last_name
@@ -4672,18 +5291,18 @@ class InlineQueryResultContact(InlineQueryResultBase):
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['phone_number'] = self.phone_number
-        json_dict['first_name'] = self.first_name
+        json_dict["phone_number"] = self.phone_number
+        json_dict["first_name"] = self.first_name
         if self.last_name:
-            json_dict['last_name'] = self.last_name
+            json_dict["last_name"] = self.last_name
         if self.vcard:
-            json_dict['vcard'] = self.vcard
+            json_dict["vcard"] = self.vcard
         if self.thumb_url:
-            json_dict['thumb_url'] = self.thumb_url
+            json_dict["thumb_url"] = self.thumb_url
         if self.thumb_width:
-            json_dict['thumb_width'] = self.thumb_width
+            json_dict["thumb_width"] = self.thumb_width
         if self.thumb_height:
-            json_dict['thumb_height'] = self.thumb_height
+            json_dict["thumb_height"] = self.thumb_height
         return json_dict
 
 
@@ -4710,12 +5329,12 @@ class InlineQueryResultGame(InlineQueryResultBase):
     """
 
     def __init__(self, id, game_short_name, reply_markup=None):
-        super().__init__('game', id, reply_markup=reply_markup)
+        super().__init__("game", id, reply_markup=reply_markup)
         self.game_short_name = game_short_name
 
     def to_dict(self):
         json_dict = super().to_dict()
-        json_dict['game_short_name'] = self.game_short_name
+        json_dict["game_short_name"] = self.game_short_name
         return json_dict
 
 
@@ -4738,23 +5357,24 @@ class InlineQueryResultCachedBase(ABC, JsonSerializable):
 
     def to_json(self):
         json_dict = self.payload_dic
-        json_dict['type'] = self.type
-        json_dict['id'] = self.id
+        json_dict["type"] = self.type
+        json_dict["id"] = self.id
         if self.title:
-            json_dict['title'] = self.title
+            json_dict["title"] = self.title
         if self.description:
-            json_dict['description'] = self.description
+            json_dict["description"] = self.description
         if self.caption:
-            json_dict['caption'] = self.caption
+            json_dict["caption"] = self.caption
         if self.reply_markup:
-            json_dict['reply_markup'] = self.reply_markup.to_dict()
+            json_dict["reply_markup"] = self.reply_markup.to_dict()
         if self.input_message_content:
-            json_dict['input_message_content'] = self.input_message_content.to_dict()
+            json_dict["input_message_content"] = self.input_message_content.to_dict()
         if self.parse_mode:
-            json_dict['parse_mode'] = self.parse_mode
+            json_dict["parse_mode"] = self.parse_mode
         if self.caption_entities:
-            json_dict['caption_entities'] = MessageEntity.to_list_of_dicts(
-                self.caption_entities)
+            json_dict["caption_entities"] = MessageEntity.to_list_of_dicts(
+                self.caption_entities
+            )
         return json.dumps(json_dict)
 
 
@@ -4782,11 +5402,11 @@ class InlineQueryResultCachedPhoto(InlineQueryResultCachedBase):
     :param caption: Optional. Caption of the photo to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the photo caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the photo caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4800,11 +5420,20 @@ class InlineQueryResultCachedPhoto(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedPhoto`
     """
 
-    def __init__(self, id, photo_file_id, title=None, description=None,
-                 caption=None, caption_entities=None, parse_mode=None,
-                 reply_markup=None, input_message_content=None):
+    def __init__(
+        self,
+        id,
+        photo_file_id,
+        title=None,
+        description=None,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'photo'
+        self.type = "photo"
         self.id = id
         self.photo_file_id = photo_file_id
         self.title = title
@@ -4814,7 +5443,7 @@ class InlineQueryResultCachedPhoto(InlineQueryResultCachedBase):
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
         self.parse_mode = parse_mode
-        self.payload_dic['photo_file_id'] = photo_file_id
+        self.payload_dic["photo_file_id"] = photo_file_id
 
 
 class InlineQueryResultCachedGif(InlineQueryResultCachedBase):
@@ -4841,7 +5470,7 @@ class InlineQueryResultCachedGif(InlineQueryResultCachedBase):
     :param parse_mode: Optional. Mode for parsing entities in the caption. See formatting options for more details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4855,11 +5484,20 @@ class InlineQueryResultCachedGif(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedGif`
     """
 
-    def __init__(self, id, gif_file_id, title=None, description=None,
-                 caption=None, caption_entities=None, parse_mode=None,
-                 reply_markup=None, input_message_content=None):
+    def __init__(
+        self,
+        id,
+        gif_file_id,
+        title=None,
+        description=None,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'gif'
+        self.type = "gif"
         self.id = id
         self.gif_file_id = gif_file_id
         self.title = title
@@ -4869,7 +5507,7 @@ class InlineQueryResultCachedGif(InlineQueryResultCachedBase):
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
         self.parse_mode = parse_mode
-        self.payload_dic['gif_file_id'] = gif_file_id
+        self.payload_dic["gif_file_id"] = gif_file_id
 
 
 class InlineQueryResultCachedMpeg4Gif(InlineQueryResultCachedBase):
@@ -4896,7 +5534,7 @@ class InlineQueryResultCachedMpeg4Gif(InlineQueryResultCachedBase):
     :param parse_mode: Optional. Mode for parsing entities in the caption. See formatting options for more details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -4910,11 +5548,20 @@ class InlineQueryResultCachedMpeg4Gif(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedMpeg4Gif`
     """
 
-    def __init__(self, id, mpeg4_file_id, title=None, description=None,
-                 caption=None, caption_entities=None, parse_mode=None,
-                 reply_markup=None, input_message_content=None):
+    def __init__(
+        self,
+        id,
+        mpeg4_file_id,
+        title=None,
+        description=None,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'mpeg4_gif'
+        self.type = "mpeg4_gif"
         self.id = id
         self.mpeg4_file_id = mpeg4_file_id
         self.title = title
@@ -4924,7 +5571,7 @@ class InlineQueryResultCachedMpeg4Gif(InlineQueryResultCachedBase):
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
         self.parse_mode = parse_mode
-        self.payload_dic['mpeg4_file_id'] = mpeg4_file_id
+        self.payload_dic["mpeg4_file_id"] = mpeg4_file_id
 
 
 class InlineQueryResultCachedSticker(InlineQueryResultCachedBase):
@@ -4952,14 +5599,16 @@ class InlineQueryResultCachedSticker(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedSticker`
     """
 
-    def __init__(self, id, sticker_file_id, reply_markup=None, input_message_content=None):
+    def __init__(
+        self, id, sticker_file_id, reply_markup=None, input_message_content=None
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'sticker'
+        self.type = "sticker"
         self.id = id
         self.sticker_file_id = sticker_file_id
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
-        self.payload_dic['sticker_file_id'] = sticker_file_id
+        self.payload_dic["sticker_file_id"] = sticker_file_id
 
 
 class InlineQueryResultCachedDocument(InlineQueryResultCachedBase):
@@ -4986,11 +5635,11 @@ class InlineQueryResultCachedDocument(InlineQueryResultCachedBase):
     :param caption: Optional. Caption of the document to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the document caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the document caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -5004,11 +5653,20 @@ class InlineQueryResultCachedDocument(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedDocument`
     """
 
-    def __init__(self, id, document_file_id, title, description=None,
-                 caption=None, caption_entities=None, parse_mode=None,
-                 reply_markup=None, input_message_content=None):
+    def __init__(
+        self,
+        id,
+        document_file_id,
+        title,
+        description=None,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'document'
+        self.type = "document"
         self.id = id
         self.document_file_id = document_file_id
         self.title = title
@@ -5018,7 +5676,7 @@ class InlineQueryResultCachedDocument(InlineQueryResultCachedBase):
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
         self.parse_mode = parse_mode
-        self.payload_dic['document_file_id'] = document_file_id
+        self.payload_dic["document_file_id"] = document_file_id
 
 
 class InlineQueryResultCachedVideo(InlineQueryResultCachedBase):
@@ -5045,11 +5703,11 @@ class InlineQueryResultCachedVideo(InlineQueryResultCachedBase):
     :param caption: Optional. Caption of the video to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the video caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the video caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -5063,12 +5721,20 @@ class InlineQueryResultCachedVideo(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedVideo`
     """
 
-    def __init__(self, id, video_file_id, title, description=None,
-                 caption=None, caption_entities=None, parse_mode=None,
-                 reply_markup=None,
-                 input_message_content=None):
+    def __init__(
+        self,
+        id,
+        video_file_id,
+        title,
+        description=None,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'video'
+        self.type = "video"
         self.id = id
         self.video_file_id = video_file_id
         self.title = title
@@ -5078,7 +5744,7 @@ class InlineQueryResultCachedVideo(InlineQueryResultCachedBase):
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
         self.parse_mode = parse_mode
-        self.payload_dic['video_file_id'] = video_file_id
+        self.payload_dic["video_file_id"] = video_file_id
 
 
 class InlineQueryResultCachedVoice(InlineQueryResultCachedBase):
@@ -5102,11 +5768,11 @@ class InlineQueryResultCachedVoice(InlineQueryResultCachedBase):
     :param caption: Optional. Caption, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the voice message caption. See formatting options for 
+    :param parse_mode: Optional. Mode for parsing entities in the voice message caption. See formatting options for
         more details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -5120,10 +5786,19 @@ class InlineQueryResultCachedVoice(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedVoice`
     """
 
-    def __init__(self, id, voice_file_id, title, caption=None, caption_entities=None,
-                 parse_mode=None, reply_markup=None, input_message_content=None):
+    def __init__(
+        self,
+        id,
+        voice_file_id,
+        title,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'voice'
+        self.type = "voice"
         self.id = id
         self.voice_file_id = voice_file_id
         self.title = title
@@ -5132,7 +5807,7 @@ class InlineQueryResultCachedVoice(InlineQueryResultCachedBase):
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
         self.parse_mode = parse_mode
-        self.payload_dic['voice_file_id'] = voice_file_id
+        self.payload_dic["voice_file_id"] = voice_file_id
 
 
 class InlineQueryResultCachedAudio(InlineQueryResultCachedBase):
@@ -5153,11 +5828,11 @@ class InlineQueryResultCachedAudio(InlineQueryResultCachedBase):
     :param caption: Optional. Caption, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the audio caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the audio caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -5171,10 +5846,18 @@ class InlineQueryResultCachedAudio(InlineQueryResultCachedBase):
     :rtype: :class:`telebot.types.InlineQueryResultCachedAudio`
     """
 
-    def __init__(self, id, audio_file_id, caption=None, caption_entities=None,
-                 parse_mode=None, reply_markup=None, input_message_content=None):
+    def __init__(
+        self,
+        id,
+        audio_file_id,
+        caption=None,
+        caption_entities=None,
+        parse_mode=None,
+        reply_markup=None,
+        input_message_content=None,
+    ):
         InlineQueryResultCachedBase.__init__(self)
-        self.type = 'audio'
+        self.type = "audio"
         self.id = id
         self.audio_file_id = audio_file_id
         self.caption = caption
@@ -5182,10 +5865,11 @@ class InlineQueryResultCachedAudio(InlineQueryResultCachedBase):
         self.reply_markup = reply_markup
         self.input_message_content = input_message_content
         self.parse_mode = parse_mode
-        self.payload_dic['audio_file_id'] = audio_file_id
+        self.payload_dic["audio_file_id"] = audio_file_id
 
 
 # Games
+
 
 class Game(JsonDeserializable):
     """
@@ -5202,8 +5886,8 @@ class Game(JsonDeserializable):
     :param photo: Photo that will be displayed in the game message in chats.
     :type photo: :obj:`list` of :class:`telebot.types.PhotoSize`
 
-    :param text: Optional. Brief description of the game or high scores included in the game message. Can be 
-        automatically edited to include current high scores for the game when the bot calls setGameScore, or manually edited 
+    :param text: Optional. Brief description of the game or high scores included in the game message. Can be
+        automatically edited to include current high scores for the game when the bot calls setGameScore, or manually edited
         using editMessageText. 0-4096 characters.
     :type text: :obj:`str`
 
@@ -5216,16 +5900,17 @@ class Game(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.Game`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['photo'] = Game.parse_photo(obj['photo'])
-        if 'text_entities' in obj:
-            obj['text_entities'] = Game.parse_entities(obj['text_entities'])
-        if 'animation' in obj:
-            obj['animation'] = Animation.de_json(obj['animation'])
+        obj["photo"] = Game.parse_photo(obj["photo"])
+        if "text_entities" in obj:
+            obj["text_entities"] = Game.parse_entities(obj["text_entities"])
+        if "animation" in obj:
+            obj["animation"] = Animation.de_json(obj["animation"])
         return cls(**obj)
 
     @classmethod
@@ -5248,7 +5933,16 @@ class Game(JsonDeserializable):
             ret.append(MessageEntity.de_json(me))
         return ret
 
-    def __init__(self, title, description, photo, text=None, text_entities=None, animation=None, **kwargs):
+    def __init__(
+        self,
+        title,
+        description,
+        photo,
+        text=None,
+        text_entities=None,
+        animation=None,
+        **kwargs
+    ):
         self.title: str = title
         self.description: str = description
         self.photo: List[PhotoSize] = photo
@@ -5266,7 +5960,7 @@ class Animation(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
@@ -5288,27 +5982,39 @@ class Animation(JsonDeserializable):
     :param mime_type: Optional. MIME type of the file as defined by sender
     :type mime_type: :obj:`str`
 
-    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have 
-        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or 
+    :param file_size: Optional. File size in bytes. It can be bigger than 2^31 and some programming languages may have
+        difficulty/silent defects in interpreting it. But it has at most 52 significant bits, so a signed 64-bit integer or
         double-precision float type are safe for storing this value.
     :type file_size: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Animation`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'thumb' in obj and 'file_id' in obj['thumb']:
-            obj["thumb"] = PhotoSize.de_json(obj['thumb'])
+        if "thumb" in obj and "file_id" in obj["thumb"]:
+            obj["thumb"] = PhotoSize.de_json(obj["thumb"])
         else:
-            obj['thumb'] = None
+            obj["thumb"] = None
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, width=None, height=None, duration=None,
-                 thumb=None, file_name=None, mime_type=None, file_size=None, **kwargs):
+    def __init__(
+        self,
+        file_id,
+        file_unique_id,
+        width=None,
+        height=None,
+        duration=None,
+        thumb=None,
+        file_name=None,
+        mime_type=None,
+        file_size=None,
+        **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.width: int = width
@@ -5338,12 +6044,13 @@ class GameHighScore(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.GameHighScore`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['user'] = User.de_json(obj['user'])
+        obj["user"] = User.de_json(obj["user"])
         return cls(**obj)
 
     def __init__(self, position, user, score, **kwargs):
@@ -5354,6 +6061,7 @@ class GameHighScore(JsonDeserializable):
 
 # Payments
 
+
 class LabeledPrice(JsonSerializable, Dictionaryable):
     """
     This object represents a portion of the price for goods or services.
@@ -5363,8 +6071,8 @@ class LabeledPrice(JsonSerializable, Dictionaryable):
     :param label: Portion label
     :type label: :obj:`str`
 
-    :param amount: Price of the product in the smallest units of the currency (integer, not float/double). For example, 
-        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past 
+    :param amount: Price of the product in the smallest units of the currency (integer, not float/double). For example,
+        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past
         the decimal point for each currency (2 for the majority of currencies).
     :type amount: :obj:`int`
 
@@ -5377,9 +6085,7 @@ class LabeledPrice(JsonSerializable, Dictionaryable):
         self.amount: int = amount
 
     def to_dict(self):
-        return {
-            'label': self.label, 'amount': self.amount
-        }
+        return {"label": self.label, "amount": self.amount}
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -5403,22 +6109,25 @@ class Invoice(JsonDeserializable):
     :param currency: Three-letter ISO 4217 currency code
     :type currency: :obj:`str`
 
-    :param total_amount: Total price in the smallest units of the currency (integer, not float/double). For example, 
-        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past 
+    :param total_amount: Total price in the smallest units of the currency (integer, not float/double). For example,
+        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past
         the decimal point for each currency (2 for the majority of currencies).
     :type total_amount: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.Invoice`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, title, description, start_parameter, currency, total_amount, **kwargs):
+    def __init__(
+        self, title, description, start_parameter, currency, total_amount, **kwargs
+    ):
         self.title: str = title
         self.description: str = description
         self.start_parameter: str = start_parameter
@@ -5453,14 +6162,17 @@ class ShippingAddress(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ShippingAddress`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
 
-    def __init__(self, country_code, state, city, street_line1, street_line2, post_code, **kwargs):
+    def __init__(
+        self, country_code, state, city, street_line1, street_line2, post_code, **kwargs
+    ):
         self.country_code: str = country_code
         self.state: str = state
         self.city: str = city
@@ -5490,16 +6202,19 @@ class OrderInfo(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.OrderInfo`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['shipping_address'] = ShippingAddress.de_json(
-            obj.get('shipping_address'))
+        obj["shipping_address"] = ShippingAddress.de_json(
+            obj.get("shipping_address"))
         return cls(**obj)
 
-    def __init__(self, name=None, phone_number=None, email=None, shipping_address=None, **kwargs):
+    def __init__(
+        self, name=None, phone_number=None, email=None, shipping_address=None, **kwargs
+    ):
         self.name: str = name
         self.phone_number: str = phone_number
         self.email: str = email
@@ -5548,7 +6263,8 @@ class ShippingOption(JsonSerializable):
         for p in self.prices:
             price_list.append(p.to_dict())
         json_dict = json.dumps(
-            {'id': self.id, 'title': self.title, 'prices': price_list})
+            {"id": self.id, "title": self.title, "prices": price_list}
+        )
         return json_dict
 
 
@@ -5561,8 +6277,8 @@ class SuccessfulPayment(JsonDeserializable):
     :param currency: Three-letter ISO 4217 currency code
     :type currency: :obj:`str`
 
-    :param total_amount: Total price in the smallest units of the currency (integer, not float/double). For example, 
-        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past 
+    :param total_amount: Total price in the smallest units of the currency (integer, not float/double). For example,
+        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past
         the decimal point for each currency (2 for the majority of currencies).
     :type total_amount: :obj:`int`
 
@@ -5584,16 +6300,26 @@ class SuccessfulPayment(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.SuccessfulPayment`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['order_info'] = OrderInfo.de_json(obj.get('order_info'))
+        obj["order_info"] = OrderInfo.de_json(obj.get("order_info"))
         return cls(**obj)
 
-    def __init__(self, currency, total_amount, invoice_payload, shipping_option_id=None, order_info=None,
-                 telegram_payment_charge_id=None, provider_payment_charge_id=None, **kwargs):
+    def __init__(
+        self,
+        currency,
+        total_amount,
+        invoice_payload,
+        shipping_option_id=None,
+        order_info=None,
+        telegram_payment_charge_id=None,
+        provider_payment_charge_id=None,
+        **kwargs
+    ):
         self.currency: str = currency
         self.total_amount: int = total_amount
         self.invoice_payload: str = invoice_payload
@@ -5624,14 +6350,15 @@ class ShippingQuery(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ShippingQuery`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['from_user'] = User.de_json(obj.pop('from'))
-        obj['shipping_address'] = ShippingAddress.de_json(
-            obj['shipping_address'])
+        obj["from_user"] = User.de_json(obj.pop("from"))
+        obj["shipping_address"] = ShippingAddress.de_json(
+            obj["shipping_address"])
         return cls(**obj)
 
     def __init__(self, id, from_user, invoice_payload, shipping_address, **kwargs):
@@ -5656,8 +6383,8 @@ class PreCheckoutQuery(JsonDeserializable):
     :param currency: Three-letter ISO 4217 currency code
     :type currency: :obj:`str`
 
-    :param total_amount: Total price in the smallest units of the currency (integer, not float/double). For example, 
-        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past 
+    :param total_amount: Total price in the smallest units of the currency (integer, not float/double). For example,
+        for a price of US$ 1.45 pass amount = 145. See the exp parameter in currencies.json, it shows the number of digits past
         the decimal point for each currency (2 for the majority of currencies).
     :type total_amount: :obj:`int`
 
@@ -5673,16 +6400,27 @@ class PreCheckoutQuery(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.PreCheckoutQuery`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['from_user'] = User.de_json(obj.pop('from'))
-        obj['order_info'] = OrderInfo.de_json(obj.get('order_info'))
+        obj["from_user"] = User.de_json(obj.pop("from"))
+        obj["order_info"] = OrderInfo.de_json(obj.get("order_info"))
         return cls(**obj)
 
-    def __init__(self, id, from_user, currency, total_amount, invoice_payload, shipping_option_id=None, order_info=None, **kwargs):
+    def __init__(
+        self,
+        id,
+        from_user,
+        currency,
+        total_amount,
+        invoice_payload,
+        shipping_option_id=None,
+        order_info=None,
+        **kwargs
+    ):
         self.id: str = id
         self.from_user: User = from_user
         self.currency: str = currency
@@ -5693,6 +6431,7 @@ class PreCheckoutQuery(JsonDeserializable):
 
 
 # Stickers
+
 
 class StickerSet(JsonDeserializable):
     """
@@ -5728,22 +6467,33 @@ class StickerSet(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.StickerSet`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
         stickers = []
-        for s in obj['stickers']:
+        for s in obj["stickers"]:
             stickers.append(Sticker.de_json(s))
-        obj['stickers'] = stickers
-        if 'thumb' in obj and 'file_id' in obj['thumb']:
-            obj['thumb'] = PhotoSize.de_json(obj['thumb'])
+        obj["stickers"] = stickers
+        if "thumb" in obj and "file_id" in obj["thumb"]:
+            obj["thumb"] = PhotoSize.de_json(obj["thumb"])
         else:
-            obj['thumb'] = None
+            obj["thumb"] = None
         return cls(**obj)
 
-    def __init__(self, name, title, sticker_type, is_animated, is_video, stickers, thumb=None, **kwargs):
+    def __init__(
+        self,
+        name,
+        title,
+        sticker_type,
+        is_animated,
+        is_video,
+        stickers,
+        thumb=None,
+        **kwargs
+    ):
         self.name: str = name
         self.title: str = title
         self.sticker_type: str = sticker_type
@@ -5759,7 +6509,7 @@ class StickerSet(JsonDeserializable):
         """
         logger.warning(
             "contains_masks is deprecated, use sticker_type instead")
-        return self.sticker_type == 'mask'
+        return self.sticker_type == "mask"
 
 
 class Sticker(JsonDeserializable):
@@ -5771,7 +6521,7 @@ class Sticker(JsonDeserializable):
     :param file_id: Identifier for this file, which can be used to download or reuse the file
     :type file_id: :obj:`str`
 
-    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different 
+    :param file_unique_id: Unique identifier for this file, which is supposed to be the same over time and for different
         bots. Can't be used to download or reuse the file.
     :type file_unique_id: :obj:`str`
 
@@ -5818,22 +6568,37 @@ class Sticker(JsonDeserializable):
 
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'thumb' in obj and 'file_id' in obj['thumb']:
-            obj['thumb'] = PhotoSize.de_json(obj['thumb'])
+        if "thumb" in obj and "file_id" in obj["thumb"]:
+            obj["thumb"] = PhotoSize.de_json(obj["thumb"])
         else:
-            obj['thumb'] = None
-        if 'mask_position' in obj:
-            obj['mask_position'] = MaskPosition.de_json(obj['mask_position'])
-        if 'premium_animation' in obj:
-            obj['premium_animation'] = File.de_json(obj['premium_animation'])
+            obj["thumb"] = None
+        if "mask_position" in obj:
+            obj["mask_position"] = MaskPosition.de_json(obj["mask_position"])
+        if "premium_animation" in obj:
+            obj["premium_animation"] = File.de_json(obj["premium_animation"])
         return cls(**obj)
 
-    def __init__(self, file_id, file_unique_id, type, width, height, is_animated,
-                 is_video, thumb=None, emoji=None, set_name=None, mask_position=None, file_size=None,
-                 premium_animation=None, custom_emoji_id=None, **kwargs):
+    def __init__(
+        self,
+        file_id,
+        file_unique_id,
+        type,
+        width,
+        height,
+        is_animated,
+        is_video,
+        thumb=None,
+        emoji=None,
+        set_name=None,
+        mask_position=None,
+        file_size=None,
+        premium_animation=None,
+        custom_emoji_id=None,
+        **kwargs
+    ):
         self.file_id: str = file_id
         self.file_unique_id: str = file_unique_id
         self.type: str = type
@@ -5856,15 +6621,15 @@ class MaskPosition(Dictionaryable, JsonDeserializable, JsonSerializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#maskposition
 
-    :param point: The part of the face relative to which the mask should be placed. One of “forehead”, “eyes”, “mouth”, or 
+    :param point: The part of the face relative to which the mask should be placed. One of “forehead”, “eyes”, “mouth”, or
         “chin”.
     :type point: :obj:`str`
 
-    :param x_shift: Shift by X-axis measured in widths of the mask scaled to the face size, from left to right. For example, 
+    :param x_shift: Shift by X-axis measured in widths of the mask scaled to the face size, from left to right. For example,
         choosing -1.0 will place mask just to the left of the default mask position.
     :type x_shift: :obj:`float` number
 
-    :param y_shift: Shift by Y-axis measured in heights of the mask scaled to the face size, from top to bottom. For 
+    :param y_shift: Shift by Y-axis measured in heights of the mask scaled to the face size, from top to bottom. For
         example, 1.0 will place the mask just below the default mask position.
     :type y_shift: :obj:`float` number
 
@@ -5877,7 +6642,7 @@ class MaskPosition(Dictionaryable, JsonDeserializable, JsonSerializable):
 
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
@@ -5892,13 +6657,21 @@ class MaskPosition(Dictionaryable, JsonDeserializable, JsonSerializable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        return {'point': self.point, 'x_shift': self.x_shift, 'y_shift': self.y_shift, 'scale': self.scale}
+        return {
+            "point": self.point,
+            "x_shift": self.x_shift,
+            "y_shift": self.y_shift,
+            "scale": self.scale,
+        }
 
 
 # InputMedia
 
+
 class InputMedia(Dictionaryable, JsonSerializable):
-    def __init__(self, type, media, caption=None, parse_mode=None, caption_entities=None):
+    def __init__(
+        self, type, media, caption=None, parse_mode=None, caption_entities=None
+    ):
         self.type: str = type
         self.media: str = media
         self.caption: Optional[str] = caption
@@ -5906,24 +6679,25 @@ class InputMedia(Dictionaryable, JsonSerializable):
         self.caption_entities: Optional[List[MessageEntity]] = caption_entities
 
         if is_string(self.media):
-            self._media_name = ''
+            self._media_name = ""
             self._media_dic = self.media
         else:
             self._media_name = generate_random_token()
-            self._media_dic = 'attach://{0}'.format(self._media_name)
+            self._media_dic = "attach://{0}".format(self._media_name)
 
     def to_json(self):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        json_dict = {'type': self.type, 'media': self._media_dic}
+        json_dict = {"type": self.type, "media": self._media_dic}
         if self.caption:
-            json_dict['caption'] = self.caption
+            json_dict["caption"] = self.caption
         if self.parse_mode:
-            json_dict['parse_mode'] = self.parse_mode
+            json_dict["parse_mode"] = self.parse_mode
         if self.caption_entities:
-            json_dict['caption_entities'] = MessageEntity.to_list_of_dicts(
-                self.caption_entities)
+            json_dict["caption_entities"] = MessageEntity.to_list_of_dicts(
+                self.caption_entities
+            )
         return json_dict
 
     def convert_input_media(self):
@@ -5942,19 +6716,19 @@ class InputMediaPhoto(InputMedia):
 
     Telegram Documentation: https://core.telegram.org/bots/api#inputmediaphoto
 
-    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an 
-        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using 
+    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an
+        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using
         multipart/form-data under <file_attach_name> name. More information on Sending Files »
     :type media: :obj:`str`
 
     :param caption: Optional. Caption of the photo to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the photo caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the photo caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -5965,19 +6739,31 @@ class InputMediaPhoto(InputMedia):
     :rtype: :class:`telebot.types.InputMediaPhoto`
     """
 
-    def __init__(self, media, caption=None, parse_mode=None, caption_entities=None, has_spoiler=None):
+    def __init__(
+        self,
+        media,
+        caption=None,
+        parse_mode=None,
+        caption_entities=None,
+        has_spoiler=None,
+    ):
         if is_pil_image(media):
             media = pil_image_to_file(media)
 
         super(InputMediaPhoto, self).__init__(
-            type="photo", media=media, caption=caption, parse_mode=parse_mode, caption_entities=caption_entities)
+            type="photo",
+            media=media,
+            caption=caption,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
 
         self.has_spoiler: Optional[bool] = has_spoiler
 
     def to_dict(self):
         ret = super(InputMediaPhoto, self).to_dict()
         if self.has_spoiler is not None:
-            ret['has_spoiler'] = self.has_spoiler
+            ret["has_spoiler"] = self.has_spoiler
         return ret
 
 
@@ -5987,26 +6773,26 @@ class InputMediaVideo(InputMedia):
 
     Telegram Documentation: https://core.telegram.org/bots/api#inputmediavideo
 
-    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an 
-        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using 
+    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an
+        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using
         multipart/form-data under <file_attach_name> name. More information on Sending Files »
     :type media: :obj:`str`
 
-    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported 
-        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should 
-        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be 
-        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using 
+    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported
+        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should
+        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be
+        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using
         multipart/form-data under <file_attach_name>. More information on Sending Files »
     :type thumb: InputFile or :obj:`str`
 
     :param caption: Optional. Caption of the video to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the video caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the video caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -6029,10 +6815,26 @@ class InputMediaVideo(InputMedia):
     :rtype: :class:`telebot.types.InputMediaVideo`
     """
 
-    def __init__(self, media, thumb=None, caption=None, parse_mode=None, caption_entities=None,
-                 width=None, height=None, duration=None, supports_streaming=None, has_spoiler=None):
+    def __init__(
+        self,
+        media,
+        thumb=None,
+        caption=None,
+        parse_mode=None,
+        caption_entities=None,
+        width=None,
+        height=None,
+        duration=None,
+        supports_streaming=None,
+        has_spoiler=None,
+    ):
         super(InputMediaVideo, self).__init__(
-            type="video", media=media, caption=caption, parse_mode=parse_mode, caption_entities=caption_entities)
+            type="video",
+            media=media,
+            caption=caption,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.thumb = thumb
         self.width = width
         self.height = height
@@ -6043,17 +6845,17 @@ class InputMediaVideo(InputMedia):
     def to_dict(self):
         ret = super(InputMediaVideo, self).to_dict()
         if self.thumb:
-            ret['thumb'] = self.thumb
+            ret["thumb"] = self.thumb
         if self.width:
-            ret['width'] = self.width
+            ret["width"] = self.width
         if self.height:
-            ret['height'] = self.height
+            ret["height"] = self.height
         if self.duration:
-            ret['duration'] = self.duration
+            ret["duration"] = self.duration
         if self.supports_streaming:
-            ret['supports_streaming'] = self.supports_streaming
+            ret["supports_streaming"] = self.supports_streaming
         if self.has_spoiler is not None:
-            ret['has_spoiler'] = self.has_spoiler
+            ret["has_spoiler"] = self.has_spoiler
         return ret
 
 
@@ -6063,26 +6865,26 @@ class InputMediaAnimation(InputMedia):
 
     Telegram Documentation: https://core.telegram.org/bots/api#inputmediaanimation
 
-    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an 
-        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using 
+    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an
+        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using
         multipart/form-data under <file_attach_name> name. More information on Sending Files »
     :type media: :obj:`str`
 
-    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported 
-        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should 
-        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be 
-        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using 
+    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported
+        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should
+        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be
+        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using
         multipart/form-data under <file_attach_name>. More information on Sending Files »
     :type thumb: InputFile or :obj:`str`
 
     :param caption: Optional. Caption of the animation to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the animation caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the animation caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -6102,10 +6904,25 @@ class InputMediaAnimation(InputMedia):
     :rtype: :class:`telebot.types.InputMediaAnimation`
     """
 
-    def __init__(self, media, thumb=None, caption=None, parse_mode=None, caption_entities=None,
-                 width=None, height=None, duration=None, has_spoiler=None):
+    def __init__(
+        self,
+        media,
+        thumb=None,
+        caption=None,
+        parse_mode=None,
+        caption_entities=None,
+        width=None,
+        height=None,
+        duration=None,
+        has_spoiler=None,
+    ):
         super(InputMediaAnimation, self).__init__(
-            type="animation", media=media, caption=caption, parse_mode=parse_mode, caption_entities=caption_entities)
+            type="animation",
+            media=media,
+            caption=caption,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.thumb = thumb
         self.width = width
         self.height = height
@@ -6115,15 +6932,15 @@ class InputMediaAnimation(InputMedia):
     def to_dict(self):
         ret = super(InputMediaAnimation, self).to_dict()
         if self.thumb:
-            ret['thumb'] = self.thumb
+            ret["thumb"] = self.thumb
         if self.width:
-            ret['width'] = self.width
+            ret["width"] = self.width
         if self.height:
-            ret['height'] = self.height
+            ret["height"] = self.height
         if self.duration:
-            ret['duration'] = self.duration
+            ret["duration"] = self.duration
         if self.has_spoiler is not None:
-            ret['has_spoiler'] = self.has_spoiler
+            ret["has_spoiler"] = self.has_spoiler
         return ret
 
 
@@ -6133,26 +6950,26 @@ class InputMediaAudio(InputMedia):
 
     Telegram Documentation: https://core.telegram.org/bots/api#inputmediaaudio
 
-    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an 
-        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using 
+    :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an
+        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using
         multipart/form-data under <file_attach_name> name. More information on Sending Files »
     :type media: :obj:`str`
 
-    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported 
-        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should 
-        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be 
-        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using 
+    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported
+        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should
+        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be
+        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using
         multipart/form-data under <file_attach_name>. More information on Sending Files »
     :type thumb: InputFile or :obj:`str`
 
     :param caption: Optional. Caption of the audio to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the audio caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the audio caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -6169,10 +6986,24 @@ class InputMediaAudio(InputMedia):
     :rtype: :class:`telebot.types.InputMediaAudio`
     """
 
-    def __init__(self, media, thumb=None, caption=None, parse_mode=None, caption_entities=None,
-                 duration=None, performer=None, title=None):
+    def __init__(
+        self,
+        media,
+        thumb=None,
+        caption=None,
+        parse_mode=None,
+        caption_entities=None,
+        duration=None,
+        performer=None,
+        title=None,
+    ):
         super(InputMediaAudio, self).__init__(
-            type="audio", media=media, caption=caption, parse_mode=parse_mode, caption_entities=caption_entities)
+            type="audio",
+            media=media,
+            caption=caption,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.thumb = thumb
         self.duration = duration
         self.performer = performer
@@ -6181,13 +7012,13 @@ class InputMediaAudio(InputMedia):
     def to_dict(self):
         ret = super(InputMediaAudio, self).to_dict()
         if self.thumb:
-            ret['thumb'] = self.thumb
+            ret["thumb"] = self.thumb
         if self.duration:
-            ret['duration'] = self.duration
+            ret["duration"] = self.duration
         if self.performer:
-            ret['performer'] = self.performer
+            ret["performer"] = self.performer
         if self.title:
-            ret['title'] = self.title
+            ret["title"] = self.title
         return ret
 
 
@@ -6198,29 +7029,29 @@ class InputMediaDocument(InputMedia):
     Telegram Documentation: https://core.telegram.org/bots/api#inputmediadocument
 
     :param media: File to send. Pass a file_id to send a file that exists on the Telegram servers (recommended), pass an
-        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using 
+        HTTP URL for Telegram to get a file from the Internet, or pass “attach://<file_attach_name>” to upload a new one using
         multipart/form-data under <file_attach_name> name. More information on Sending Files »
     :type media: :obj:`str`
 
-    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported 
-        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should 
-        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be 
-        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using 
+    :param thumb: Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported
+        server-side. The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail's width and height should
+        not exceed 320. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can't be reused and can be
+        only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using
         multipart/form-data under <file_attach_name>. More information on Sending Files »
     :type thumb: InputFile or :obj:`str`
 
     :param caption: Optional. Caption of the document to be sent, 0-1024 characters after entities parsing
     :type caption: :obj:`str`
 
-    :param parse_mode: Optional. Mode for parsing entities in the document caption. See formatting options for more 
+    :param parse_mode: Optional. Mode for parsing entities in the document caption. See formatting options for more
         details.
     :type parse_mode: :obj:`str`
 
-    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified 
+    :param caption_entities: Optional. List of special entities that appear in the caption, which can be specified
         instead of parse_mode
     :type caption_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
-    :param disable_content_type_detection: Optional. Disables automatic server-side content type detection for 
+    :param disable_content_type_detection: Optional. Disables automatic server-side content type detection for
         files uploaded using multipart/form-data. Always True, if the document is sent as part of an album.
     :type disable_content_type_detection: :obj:`bool`
 
@@ -6228,19 +7059,31 @@ class InputMediaDocument(InputMedia):
     :rtype: :class:`telebot.types.InputMediaDocument`
     """
 
-    def __init__(self, media, thumb=None, caption=None, parse_mode=None, caption_entities=None,
-                 disable_content_type_detection=None):
+    def __init__(
+        self,
+        media,
+        thumb=None,
+        caption=None,
+        parse_mode=None,
+        caption_entities=None,
+        disable_content_type_detection=None,
+    ):
         super(InputMediaDocument, self).__init__(
-            type="document", media=media, caption=caption, parse_mode=parse_mode, caption_entities=caption_entities)
+            type="document",
+            media=media,
+            caption=caption,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+        )
         self.thumb = thumb
         self.disable_content_type_detection = disable_content_type_detection
 
     def to_dict(self):
         ret = super(InputMediaDocument, self).to_dict()
         if self.thumb:
-            ret['thumb'] = self.thumb
+            ret["thumb"] = self.thumb
         if self.disable_content_type_detection is not None:
-            ret['disable_content_type_detection'] = self.disable_content_type_detection
+            ret["disable_content_type_detection"] = self.disable_content_type_detection
         return ret
 
 
@@ -6259,9 +7102,10 @@ class PollOption(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.PollOption`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string, dict_copy=False)
         return cls(**obj)
@@ -6269,6 +7113,7 @@ class PollOption(JsonDeserializable):
     def __init__(self, text, voter_count=0, **kwargs):
         self.text: str = text
         self.voter_count: int = voter_count
+
     # Converted in _convert_poll_options
     # def to_json(self):
     #     # send_poll Option is a simple string: https://core.telegram.org/bots/api#sendpoll
@@ -6305,15 +7150,15 @@ class Poll(JsonDeserializable):
     :param allows_multiple_answers: True, if the poll allows multiple answers
     :type allows_multiple_answers: :obj:`bool`
 
-    :param correct_option_id: Optional. 0-based identifier of the correct answer option. Available only for polls in 
+    :param correct_option_id: Optional. 0-based identifier of the correct answer option. Available only for polls in
         the quiz mode, which are closed, or was sent (not forwarded) by the bot or to the private chat with the bot.
     :type correct_option_id: :obj:`int`
 
-    :param explanation: Optional. Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a 
+    :param explanation: Optional. Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a
         quiz-style poll, 0-200 characters
     :type explanation: :obj:`str`
 
-    :param explanation_entities: Optional. Special entities like usernames, URLs, bot commands, etc. that appear in 
+    :param explanation_entities: Optional. Special entities like usernames, URLs, bot commands, etc. that appear in
         the explanation
     :type explanation_entities: :obj:`list` of :class:`telebot.types.MessageEntity`
 
@@ -6326,28 +7171,42 @@ class Poll(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.Poll`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['poll_id'] = obj.pop('id')
+        obj["poll_id"] = obj.pop("id")
         options = []
-        for opt in obj['options']:
+        for opt in obj["options"]:
             options.append(PollOption.de_json(opt))
-        obj['options'] = options or None
-        if 'explanation_entities' in obj:
-            obj['explanation_entities'] = Message.parse_entities(
-                obj['explanation_entities'])
+        obj["options"] = options or None
+        if "explanation_entities" in obj:
+            obj["explanation_entities"] = Message.parse_entities(
+                obj["explanation_entities"]
+            )
         return cls(**obj)
 
     # noinspection PyShadowingBuiltins
     def __init__(
-            self,
-            question, options,
-            poll_id=None, total_voter_count=None, is_closed=None, is_anonymous=None, type=None,
-            allows_multiple_answers=None, correct_option_id=None, explanation=None, explanation_entities=None,
-            open_period=None, close_date=None, poll_type=None, **kwargs):
+        self,
+        question,
+        options,
+        poll_id=None,
+        total_voter_count=None,
+        is_closed=None,
+        is_anonymous=None,
+        type=None,
+        allows_multiple_answers=None,
+        correct_option_id=None,
+        explanation=None,
+        explanation_entities=None,
+        open_period=None,
+        close_date=None,
+        poll_type=None,
+        **kwargs
+    ):
         self.id: str = poll_id
         self.question: str = question
         self.options: List[PollOption] = options
@@ -6393,19 +7252,20 @@ class PollAnswer(JsonSerializable, JsonDeserializable, Dictionaryable):
     :param user: The user, who changed the answer to the poll
     :type user: :class:`telebot.types.User`
 
-    :param option_ids: 0-based identifiers of answer options, chosen by the user. May be empty if the user retracted 
+    :param option_ids: 0-based identifiers of answer options, chosen by the user. May be empty if the user retracted
         their vote.
     :type option_ids: :obj:`list` of :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.PollAnswer`
     """
+
     @classmethod
     def de_json(cls, json_string):
-        if (json_string is None):
+        if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['user'] = User.de_json(obj['user'])
+        obj["user"] = User.de_json(obj["user"])
         return cls(**obj)
 
     def __init__(self, poll_id, user, option_ids, **kwargs):
@@ -6417,9 +7277,11 @@ class PollAnswer(JsonSerializable, JsonDeserializable, Dictionaryable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        return {'poll_id': self.poll_id,
-                'user': self.user.to_dict(),
-                'option_ids': self.option_ids}
+        return {
+            "poll_id": self.poll_id,
+            "user": self.user.to_dict(),
+            "option_ids": self.option_ids,
+        }
 
 
 class ChatLocation(JsonSerializable, JsonDeserializable, Dictionaryable):
@@ -6437,12 +7299,13 @@ class ChatLocation(JsonSerializable, JsonDeserializable, Dictionaryable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatLocation`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return json_string
         obj = cls.check_json(json_string)
-        obj['location'] = Location.de_json(obj['location'])
+        obj["location"] = Location.de_json(obj["location"])
         return cls(**obj)
 
     def __init__(self, location, address, **kwargs):
@@ -6453,10 +7316,7 @@ class ChatLocation(JsonSerializable, JsonDeserializable, Dictionaryable):
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        return {
-            "location": self.location.to_dict(),
-            "address": self.address
-        }
+        return {"location": self.location.to_dict(), "address": self.address}
 
 
 class ChatInviteLink(JsonSerializable, JsonDeserializable, Dictionaryable):
@@ -6465,7 +7325,7 @@ class ChatInviteLink(JsonSerializable, JsonDeserializable, Dictionaryable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#chatinvitelink
 
-    :param invite_link: The invite link. If the link was created by another chat administrator, then the second part of 
+    :param invite_link: The invite link. If the link was created by another chat administrator, then the second part of
         the link will be replaced with “…”.
     :type invite_link: :obj:`str`
 
@@ -6487,7 +7347,7 @@ class ChatInviteLink(JsonSerializable, JsonDeserializable, Dictionaryable):
     :param expire_date: Optional. Point in time (Unix timestamp) when the link will expire or has been expired
     :type expire_date: :obj:`int`
 
-    :param member_limit: Optional. The maximum number of users that can be members of the chat simultaneously after 
+    :param member_limit: Optional. The maximum number of users that can be members of the chat simultaneously after
         joining the chat via this invite link; 1-99999
     :type member_limit: :obj:`int`
 
@@ -6497,16 +7357,28 @@ class ChatInviteLink(JsonSerializable, JsonDeserializable, Dictionaryable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ChatInviteLink`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        obj['creator'] = User.de_json(obj['creator'])
+        obj["creator"] = User.de_json(obj["creator"])
         return cls(**obj)
 
-    def __init__(self, invite_link, creator, creates_join_request, is_primary, is_revoked,
-                 name=None, expire_date=None, member_limit=None, pending_join_request_count=None, **kwargs):
+    def __init__(
+        self,
+        invite_link,
+        creator,
+        creates_join_request,
+        is_primary,
+        is_revoked,
+        name=None,
+        expire_date=None,
+        member_limit=None,
+        pending_join_request_count=None,
+        **kwargs
+    ):
         self.invite_link: str = invite_link
         self.creator: User = creator
         self.creates_join_request: bool = creates_join_request
@@ -6526,7 +7398,7 @@ class ChatInviteLink(JsonSerializable, JsonDeserializable, Dictionaryable):
             "creator": self.creator.to_dict(),
             "is_primary": self.is_primary,
             "is_revoked": self.is_revoked,
-            "creates_join_request": self.creates_join_request
+            "creates_join_request": self.creates_join_request,
         }
         if self.expire_date:
             json_dict["expire_date"] = self.expire_date
@@ -6557,6 +7429,7 @@ class ProximityAlertTriggered(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ProximityAlertTriggered`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -6574,6 +7447,7 @@ class VideoChatStarted(JsonDeserializable):
     """
     This object represents a service message about a video chat started in the chat. Currently holds no information.
     """
+
     @classmethod
     def de_json(cls, json_string):
         return cls()
@@ -6589,7 +7463,7 @@ class VoiceChatStarted(VideoChatStarted):
 
     def __init__(self):
         logger.warning(
-            'VoiceChatStarted is deprecated. Use VideoChatStarted instead.')
+            "VoiceChatStarted is deprecated. Use VideoChatStarted instead.")
         super().__init__()
 
 
@@ -6599,13 +7473,14 @@ class VideoChatScheduled(JsonDeserializable):
 
     Telegram Documentation: https://core.telegram.org/bots/api#videochatscheduled
 
-    :param start_date: Point in time (Unix timestamp) when the video chat is supposed to be started by a chat 
+    :param start_date: Point in time (Unix timestamp) when the video chat is supposed to be started by a chat
         administrator
     :type start_date: :obj:`int`
 
     :return: Instance of the class
     :rtype: :class:`telebot.types.VideoChatScheduled`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -6624,7 +7499,8 @@ class VoiceChatScheduled(VideoChatScheduled):
 
     def __init__(self, *args, **kwargs):
         logger.warning(
-            'VoiceChatScheduled is deprecated. Use VideoChatScheduled instead.')
+            "VoiceChatScheduled is deprecated. Use VideoChatScheduled instead."
+        )
         super().__init__(*args, **kwargs)
 
 
@@ -6640,6 +7516,7 @@ class VideoChatEnded(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.VideoChatEnded`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -6658,7 +7535,7 @@ class VoiceChatEnded(VideoChatEnded):
 
     def __init__(self, *args, **kwargs):
         logger.warning(
-            'VoiceChatEnded is deprecated. Use VideoChatEnded instead.')
+            "VoiceChatEnded is deprecated. Use VideoChatEnded instead.")
         super().__init__(*args, **kwargs)
 
 
@@ -6674,13 +7551,14 @@ class VideoChatParticipantsInvited(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.VideoChatParticipantsInvited`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
-        if 'users' in obj:
-            obj['users'] = [User.de_json(u) for u in obj['users']]
+        if "users" in obj:
+            obj["users"] = [User.de_json(u) for u in obj["users"]]
         return cls(**obj)
 
     def __init__(self, users=None, **kwargs):
@@ -6694,7 +7572,8 @@ class VoiceChatParticipantsInvited(VideoChatParticipantsInvited):
 
     def __init__(self, *args, **kwargs):
         logger.warning(
-            'VoiceChatParticipantsInvited is deprecated. Use VideoChatParticipantsInvited instead.')
+            "VoiceChatParticipantsInvited is deprecated. Use VideoChatParticipantsInvited instead."
+        )
         super().__init__(*args, **kwargs)
 
 
@@ -6710,6 +7589,7 @@ class MessageAutoDeleteTimerChanged(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.MessageAutoDeleteTimerChanged`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -6732,17 +7612,18 @@ class MenuButton(JsonDeserializable, JsonSerializable, Dictionaryable):
     If a menu button other than MenuButtonDefault is set for a private chat, then it is applied
     in the chat. Otherwise the default menu button is applied. By default, the menu button opens the list of bot commands.
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
             return None
         obj = cls.check_json(json_string)
         map = {
-            'commands': MenuButtonCommands,
-            'web_app': MenuButtonWebApp,
-            'default': MenuButtonDefault
+            "commands": MenuButtonCommands,
+            "web_app": MenuButtonWebApp,
+            "default": MenuButtonDefault,
         }
-        return map[obj['type']](**obj)
+        return map[obj["type"]](**obj)
 
     def to_json(self):
         """
@@ -6774,7 +7655,7 @@ class MenuButtonCommands(MenuButton):
         self.type = type
 
     def to_dict(self):
-        return {'type': self.type}
+        return {"type": self.type}
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -6792,7 +7673,7 @@ class MenuButtonWebApp(MenuButton):
     :param text: Text on the button
     :type text: :obj:`str`
 
-    :param web_app: Description of the Web App that will be launched when the user presses the button. The Web App will be 
+    :param web_app: Description of the Web App that will be launched when the user presses the button. The Web App will be
         able to send an arbitrary message on behalf of the user using the method answerWebAppQuery.
     :type web_app: :class:`telebot.types.WebAppInfo`
 
@@ -6806,7 +7687,7 @@ class MenuButtonWebApp(MenuButton):
         self.web_app: WebAppInfo = web_app
 
     def to_dict(self):
-        return {'type': self.type, 'text': self.text, 'web_app': self.web_app.to_dict()}
+        return {"type": self.type, "text": self.text, "web_app": self.web_app.to_dict()}
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -6829,7 +7710,7 @@ class MenuButtonDefault(MenuButton):
         self.type: str = type
 
     def to_dict(self):
-        return {'type': self.type}
+        return {"type": self.type}
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -6844,8 +7725,8 @@ class ChatAdministratorRights(JsonDeserializable, JsonSerializable, Dictionaryab
     :param is_anonymous: True, if the user's presence in the chat is hidden
     :type is_anonymous: :obj:`bool`
 
-    :param can_manage_chat: True, if the administrator can access the chat event log, chat statistics, message 
-        statistics in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode. 
+    :param can_manage_chat: True, if the administrator can access the chat event log, chat statistics, message
+        statistics in channels, see channel members, see anonymous administrators in supergroups and ignore slow mode.
         Implied by any other administrator privilege
     :type can_manage_chat: :obj:`bool`
 
@@ -6858,8 +7739,8 @@ class ChatAdministratorRights(JsonDeserializable, JsonSerializable, Dictionaryab
     :param can_restrict_members: True, if the administrator can restrict, ban or unban chat members
     :type can_restrict_members: :obj:`bool`
 
-    :param can_promote_members: True, if the administrator can add new administrators with a subset of their own 
-        privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that 
+    :param can_promote_members: True, if the administrator can add new administrators with a subset of their own
+        privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that
         were appointed by the user)
     :type can_promote_members: :obj:`bool`
 
@@ -6872,7 +7753,7 @@ class ChatAdministratorRights(JsonDeserializable, JsonSerializable, Dictionaryab
     :param can_post_messages: Optional. True, if the administrator can post in the channel; channels only
     :type can_post_messages: :obj:`bool`
 
-    :param can_edit_messages: Optional. True, if the administrator can edit messages of other users and can pin 
+    :param can_edit_messages: Optional. True, if the administrator can edit messages of other users and can pin
         messages; channels only
     :type can_edit_messages: :obj:`bool`
 
@@ -6893,12 +7774,21 @@ class ChatAdministratorRights(JsonDeserializable, JsonSerializable, Dictionaryab
         obj = cls.check_json(json_string)
         return cls(**obj)
 
-    def __init__(self, is_anonymous: bool, can_manage_chat: bool,
-                 can_delete_messages: bool, can_manage_video_chats: bool, can_restrict_members: bool,
-                 can_promote_members: bool, can_change_info: bool, can_invite_users: bool,
-                 can_post_messages: bool = None, can_edit_messages: bool = None,
-                 can_pin_messages: bool = None, can_manage_topics: bool = None) -> None:
-
+    def __init__(
+        self,
+        is_anonymous: bool,
+        can_manage_chat: bool,
+        can_delete_messages: bool,
+        can_manage_video_chats: bool,
+        can_restrict_members: bool,
+        can_promote_members: bool,
+        can_change_info: bool,
+        can_invite_users: bool,
+        can_post_messages: bool = None,
+        can_edit_messages: bool = None,
+        can_pin_messages: bool = None,
+        can_manage_topics: bool = None,
+    ) -> None:
         self.is_anonymous: bool = is_anonymous
         self.can_manage_chat: bool = can_manage_chat
         self.can_delete_messages: bool = can_delete_messages
@@ -6914,23 +7804,23 @@ class ChatAdministratorRights(JsonDeserializable, JsonSerializable, Dictionaryab
 
     def to_dict(self):
         json_dict = {
-            'is_anonymous': self.is_anonymous,
-            'can_manage_chat': self.can_manage_chat,
-            'can_delete_messages': self.can_delete_messages,
-            'can_manage_video_chats': self.can_manage_video_chats,
-            'can_restrict_members': self.can_restrict_members,
-            'can_promote_members': self.can_promote_members,
-            'can_change_info': self.can_change_info,
-            'can_invite_users': self.can_invite_users,
+            "is_anonymous": self.is_anonymous,
+            "can_manage_chat": self.can_manage_chat,
+            "can_delete_messages": self.can_delete_messages,
+            "can_manage_video_chats": self.can_manage_video_chats,
+            "can_restrict_members": self.can_restrict_members,
+            "can_promote_members": self.can_promote_members,
+            "can_change_info": self.can_change_info,
+            "can_invite_users": self.can_invite_users,
         }
         if self.can_post_messages is not None:
-            json_dict['can_post_messages'] = self.can_post_messages
+            json_dict["can_post_messages"] = self.can_post_messages
         if self.can_edit_messages is not None:
-            json_dict['can_edit_messages'] = self.can_edit_messages
+            json_dict["can_edit_messages"] = self.can_edit_messages
         if self.can_pin_messages is not None:
-            json_dict['can_pin_messages'] = self.can_pin_messages
+            json_dict["can_pin_messages"] = self.can_pin_messages
         if self.can_manage_topics is not None:
-            json_dict['can_manage_topics'] = self.can_manage_topics
+            json_dict["can_manage_topics"] = self.can_manage_topics
         return json_dict
 
     def to_json(self):
@@ -6941,7 +7831,7 @@ class InputFile:
     """
     A class to send files through Telegram Bot API.
 
-    You need to pass a file, which should be an instance of :class:`io.IOBase` or 
+    You need to pass a file, which should be an instance of :class:`io.IOBase` or
     :class:`pathlib.Path`, or :obj:`str`.
 
     If you pass an :obj:`str` as a file, it will be opened and closed by the class.
@@ -6980,16 +7870,17 @@ class InputFile:
 
     def _resolve_file(self, file):
         if isinstance(file, str):
-            _file = open(file, 'rb')
+            _file = open(file, "rb")
             return _file, os.path.basename(_file.name)
         elif isinstance(file, IOBase):
             return file, os.path.basename(file.name)
         elif isinstance(file, Path):
-            _file = open(file, 'rb')
+            _file = open(file, "rb")
             return _file, os.path.basename(_file.name)
         else:
             raise TypeError(
-                "File must be a string or a file-like object(pathlib.Path, io.IOBase).")
+                "File must be a string or a file-like object(pathlib.Path, io.IOBase)."
+            )
 
     @property
     def file(self):
@@ -7017,6 +7908,7 @@ class ForumTopicCreated(JsonDeserializable):
     :return: Instance of the class
     :rtype: :class:`telebot.types.ForumTopicCreated`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -7024,7 +7916,9 @@ class ForumTopicCreated(JsonDeserializable):
         obj = cls.check_json(json_string)
         return cls(**obj)
 
-    def __init__(self, name: str, icon_color: int, icon_custom_emoji_id: Optional[str] = None) -> None:
+    def __init__(
+        self, name: str, icon_color: int, icon_custom_emoji_id: Optional[str] = None
+    ) -> None:
         self.name: str = name
         self.icon_color: int = icon_color
         self.icon_custom_emoji_id: Optional[str] = icon_custom_emoji_id
@@ -7036,6 +7930,7 @@ class ForumTopicClosed(JsonDeserializable):
 
     Telegram documentation: https://core.telegram.org/bots/api#forumtopicclosed
     """
+
     # for future use
     @classmethod
     def de_json(cls, json_string):
@@ -7051,6 +7946,7 @@ class ForumTopicReopened(JsonDeserializable):
 
     Telegram documentation: https://core.telegram.org/bots/api#forumtopicreopened
     """
+
     # for future use
     @classmethod
     def de_json(cls, json_string):
@@ -7073,6 +7969,7 @@ class ForumTopicEdited(JsonDeserializable):
         an empty string if the icon was removed
     :type icon_custom_emoji_id: :obj:`str`
     """
+
     @classmethod
     def de_json(cls, json_string):
         if json_string is None:
@@ -7080,7 +7977,9 @@ class ForumTopicEdited(JsonDeserializable):
         obj = cls.check_json(json_string)
         return cls(**obj)
 
-    def __init__(self, name: Optional[str] = None, icon_custom_emoji_id: Optional[str] = None) -> None:
+    def __init__(
+        self, name: Optional[str] = None, icon_custom_emoji_id: Optional[str] = None
+    ) -> None:
         self.name: Optional[str] = name
         self.icon_custom_emoji_id: Optional[str] = icon_custom_emoji_id
 
@@ -7092,6 +7991,7 @@ class GeneralForumTopicHidden(JsonDeserializable):
 
     Telegram documentation: https://core.telegram.org/bots/api#generalforumtopichidden
     """
+
     @classmethod
     def de_json(cls, json_string):
         return cls()
@@ -7145,7 +8045,13 @@ class ForumTopic(JsonDeserializable):
         obj = cls.check_json(json_string)
         return cls(**obj)
 
-    def __init__(self, message_thread_id: int, name: str, icon_color: int, icon_custom_emoji_id: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        message_thread_id: int,
+        name: str,
+        icon_color: int,
+        icon_custom_emoji_id: Optional[str] = None,
+    ) -> None:
         self.message_thread_id: int = message_thread_id
         self.name: str = name
         self.icon_color: int = icon_color
@@ -7159,6 +8065,7 @@ class WriteAccessAllowed(JsonDeserializable):
 
     Telegram documentation: https://core.telegram.org/bots/api#writeaccessallowed
     """
+
     @classmethod
     def de_json(cls, json_string):
         return cls()
