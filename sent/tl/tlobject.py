@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import struct
-from typing import Any, ClassVar, Dict, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Type, TypeVar
+
+if TYPE_CHECKING:
+    from sent.tl.serialization import BinaryReader
 
 T = TypeVar("T", bound="TLObject")
 

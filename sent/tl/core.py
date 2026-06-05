@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import gzip
 import struct
+from typing import Union
 
-from sent.tl.tlobject import TLObject, register, read_object
+from sent.tl.tlobject import TLObject, read_object, register
 
 
 @register
@@ -77,6 +78,4 @@ class GzipPacked(TLObject):
 
 
 # Re-export for convenience (typing alias only)
-from typing import Union
-
 Bool = Union[BoolFalse, BoolTrue]

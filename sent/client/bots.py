@@ -46,7 +46,9 @@ class BotMethods:
                 if getattr(btn, "text", None) == button or btn == button:
                     data = getattr(btn, "data", None)
                     if data:
-                        from sent.tl.functions.messages import MessagesGetBotCallbackAnswer
+                        from sent.tl.functions.messages import (
+                            MessagesGetBotCallbackAnswer,
+                        )
 
                         return await self(
                             MessagesGetBotCallbackAnswer(

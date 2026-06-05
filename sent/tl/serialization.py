@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import gzip
 import io
 import struct
-from typing import List, Optional, Union
+from typing import List
 
 from sent.tl.tlobject import TLObject, read_object, serialize_bytes
 

@@ -6,7 +6,7 @@ import asyncio
 import os
 import struct
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Tuple
+from typing import Optional
 
 
 async def _open_connection(ip: str, port: int, proxy=None, timeout: float = 10.0):
@@ -22,7 +22,6 @@ async def _open_connection(ip: str, port: int, proxy=None, timeout: float = 10.0
             proxy_port = proxy[2] if isinstance(proxy, (list, tuple)) else proxy.port
             proxy_user = proxy[4] if isinstance(proxy, (list, tuple)) and len(proxy) > 4 else None
             proxy_pass = proxy[5] if isinstance(proxy, (list, tuple)) and len(proxy) > 5 else None
-            sock = python_socks.ProxyType.SOCKS5
             proxy_conn = python_socks.Proxy.from_url(
                 f"socks5://{proxy_host}:{proxy_port}",
                 username=proxy_user,

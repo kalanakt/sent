@@ -10,7 +10,6 @@ class NewMessage(EventBuilder):
     """Event fired on new incoming/outgoing messages."""
 
     def build(self, update, others=None, client=None):
-        from sent.client.message import Message
 
         if hasattr(update, "message"):
             msg = update.message

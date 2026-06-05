@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import struct
 
 
 def sha1(data: bytes) -> bytes:

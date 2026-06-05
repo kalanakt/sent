@@ -46,8 +46,10 @@ class ChatMethods:
     ):
         entity = await self.get_input_entity(entity)
         from sent.tl.functions.channels import ChannelsGetParticipants
-        from sent.tl.types.channels import ChannelsChannelParticipantsRecent
-        from sent.tl.types.channels import ChannelsChannelParticipantsSearch
+        from sent.tl.types.channels import (
+            ChannelsChannelParticipantsRecent,
+            ChannelsChannelParticipantsSearch,
+        )
 
         part_filter = filter
         if search and not part_filter:

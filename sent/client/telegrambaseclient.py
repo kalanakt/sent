@@ -10,7 +10,7 @@ from typing import Any, Optional, Union
 
 from sent.client.entity import EntityCache
 from sent.crypto.auth_key import AuthKey
-from sent.errors.common import FloodWaitError, RPCError
+from sent.errors.common import RPCError
 from sent.network.authenticator import do_authentication
 from sent.network.connection import get_connection
 from sent.network.dc import get_dc

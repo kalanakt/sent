@@ -33,4 +33,4 @@ jobs:
       - name: Install tools
         run: pip install ruff
       - name: Ruff
-        run: ruff check sent test --select E,F,I
+        run: ruff check sent test

@@ -1,13 +1,12 @@
 """Unit tests for sent MTProto framework."""
 
-import pytest
 
-from sent.tl.core import BoolFalse, BoolTrue, GzipPacked
-from sent.tl.serialization import BinaryReader, BinaryWriter
-from sent.tl.tlobject import serialize_bytes, serialize_int, serialize_long
-from sent.crypto.mtproto2 import sha256, calc_msg_key, derive_keys_iv
 from sent.crypto.auth_key import AuthKey, calc_key_id
 from sent.crypto.factorization import factorize
+from sent.crypto.mtproto2 import calc_msg_key, derive_keys_iv, sha256
+from sent.tl.core import BoolFalse, BoolTrue
+from sent.tl.serialization import BinaryReader, BinaryWriter
+from sent.tl.tlobject import serialize_bytes, serialize_int
 
 
 class TestTLSerialization:
@@ -21,7 +20,7 @@ class TestTLSerialization:
     def test_bytes_serialization(self):
         data = b"hello"
         encoded = serialize_bytes(data)
-        reader = BinaryReader(encoded)
+        assert BinaryReader(encoded).read_bytes() == data
 
     def test_vector_serialization(self):
         from sent.tl.types.all import InputPeerEmpty
@@ -188,7 +187,7 @@ class TestEvents:
 
 class TestErrors:
     def test_rpc_error(self):
-        from sent.errors import RPCError, FloodWaitError, rpc_message_to_error
+        from sent.errors import FloodWaitError, rpc_message_to_error
 
         err = rpc_message_to_error("FLOOD_WAIT_30", 420)
         assert isinstance(err, FloodWaitError)
@@ -210,7 +209,7 @@ class TestErrors:
 
 class TestImports:
     def test_main_imports(self):
-        from sent import TelegramClient, events, types, functions, errors
+        from sent import TelegramClient, events
 
         assert TelegramClient is not None
         assert events.NewMessage is not None
@@ -222,13 +221,13 @@ class TestImports:
         assert LAYER >= 195
 
     def test_constructor_registry(self):
-        from sent.tl.tlobject import CONSTRUCTORS
         import sent.tl.types  # noqa
+        from sent.tl.tlobject import CONSTRUCTORS
 
         assert len(CONSTRUCTORS) > 1000
 
     def test_mtproto_types_registered(self):
-        from sent.tl.mtproto_types import MsgContainer, RpcResult
+        from sent.tl.mtproto_types import RpcResult
 
         assert RpcResult.CONSTRUCTOR_ID in __import__(
             "sent.tl.tlobject", fromlist=["CONSTRUCTORS"]

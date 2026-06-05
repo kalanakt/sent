@@ -8,7 +8,7 @@ import time
 
 from sent.crypto.auth_key import AuthKey
 from sent.crypto.factorization import factorize
-from sent.crypto.mtproto2 import sha1, sha256
+from sent.crypto.mtproto2 import sha256
 from sent.crypto.rsa import encrypt as rsa_encrypt
 from sent.network.connection import Connection
 from sent.tl.functions.all import ReqDHParams, ReqPqMulti, SetClientDHParams

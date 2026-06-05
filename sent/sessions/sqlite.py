@@ -6,7 +6,7 @@ import sqlite3
 import time
 from typing import Any, Optional, Tuple
 
-from sent.network.dc import DEFAULT_DCS, get_dc
+from sent.network.dc import DEFAULT_DCS
 from sent.sessions.abstract import Session
 
 

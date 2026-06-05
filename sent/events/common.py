@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, List, Optional, Pattern, Union
+from typing import Callable, Optional, Pattern, Union
 
 
 class EventCommon:

@@ -34,10 +34,10 @@ Tests run automatically in CI on Python 3.10, 3.11, and 3.12 for every push and 
 ## Linting
 
 ```bash
-ruff check sent test --select E,F,I
+ruff check sent test
 ```
 
-CI runs the same check. Please fix lint issues before opening a PR.
+CI runs the same check (configured in `pyproject.toml`, excluding auto-generated TL modules). Please fix lint issues before opening a PR.
 
 ## Regenerating TL types
 

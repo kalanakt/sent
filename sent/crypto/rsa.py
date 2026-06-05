@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import struct
 from typing import Dict, List, Tuple
 
 # Telegram production RSA public keys (fingerprints -> (modulus, exponent))
@@ -56,10 +55,10 @@ def get_public_key_fingerprints() -> List[int]:
 
 def _rsa_pad(data: bytes, modulus: int) -> int:
     """RSA pad data for encryption."""
-    data_with_hash = data
     # Add random padding to fill to modulus size
-    from sent.crypto.mtproto2 import sha1
     import os
+
+    from sent.crypto.mtproto2 import sha1
 
     data_hash = sha1(data)
     random_bytes = os.urandom(235 - len(data) - len(data_hash))

@@ -5,15 +5,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from sent.crypto.auth_key import AuthKey
-from sent.errors.common import FloodWaitError, RPCError, rpc_message_to_error
+from sent.errors.common import FloodWaitError, rpc_message_to_error
 from sent.network.connection import get_connection
 from sent.network.mtprotostate import MTProtoState
 from sent.network.requeststate import RequestState
-from sent.tl.core import GzipPacked
-from sent.tl.mtproto_types import ContainerMessage, MsgContainer, RpcResult
+from sent.tl.mtproto_types import RpcResult
 from sent.tl.serialization import BinaryReader
 from sent.tl.tlobject import TLObject, read_object
 

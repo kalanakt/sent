@@ -165,7 +165,8 @@ def _write_expr(param: TLParameter, attr: str) -> str:
     t = param.type
     if t in ("int", "long"):
         signed = t == "int"
-        return f"writer.write_{'int' if t == 'int' else 'long'}(self.{attr}, signed={signed})"
+        method = "write_int" if t == "int" else "write_long"
+        return f"writer.{method}(self.{attr}, signed={signed})"
     if t == "double":
         return f"writer.write_double(self.{attr})"
     if t == "string":
@@ -183,7 +184,10 @@ def _write_expr(param: TLParameter, attr: str) -> str:
     inner = _vector_inner(t)
     if inner:
         if inner in CORE_TYPES:
-            return f"writer.write(BinaryWriter.serialize_vector(self.{attr}, item_type='{inner}'))"
+            return (
+                f"writer.write(BinaryWriter.serialize_vector"
+                f"(self.{attr}, item_type='{inner}'))"
+            )
         return f"writer.write(BinaryWriter.serialize_vector(self.{attr}))"
     return f"writer.write(bytes(self.{attr}))"
 
@@ -191,7 +195,7 @@ def _write_expr(param: TLParameter, attr: str) -> str:
 def generate_type_class(defn: TLDefinition, type_ids: Dict[str, int]) -> str:
     cls_name = _safe_class_name(defn.name)
     lines = [
-        f"@register",
+        "@register",
         f"class {cls_name}(TLObject):",
         f"    CONSTRUCTOR_ID = {defn.hash}",
     ]
@@ -215,7 +219,7 @@ def generate_type_class(defn: TLDefinition, type_ids: Dict[str, int]) -> str:
 
     # _bytes
     lines.append("    def _bytes(self):")
-    lines.append(f"        writer = BinaryWriter()")
+    lines.append("        writer = BinaryWriter()")
     lines.append(f"        writer.write_int({defn.hash}, signed=False)")
     _append_flags_bytes(lines, defn)
     for arg in defn.args:
@@ -247,7 +251,7 @@ def generate_type_class(defn: TLDefinition, type_ids: Dict[str, int]) -> str:
             else:
                 lines.append(f"        if {ff} & (1 << {arg.flag_index}):")
                 lines.append(f"            {pn} = {_read_expr(arg)}")
-                lines.append(f"        else:")
+                lines.append("        else:")
                 lines.append(f"            {pn} = None")
                 init_args.append(pn)
         else:
@@ -265,7 +269,7 @@ def generate_type_class(defn: TLDefinition, type_ids: Dict[str, int]) -> str:
 def generate_function_class(defn: TLDefinition, type_ids: Dict[str, int]) -> str:
     cls_name = _safe_class_name(defn.name)
     lines = [
-        f"@register",
+        "@register",
         f"class {cls_name}(TLObject):",
         f"    CONSTRUCTOR_ID = {defn.hash}",
     ]
@@ -316,7 +320,7 @@ def generate_function_class(defn: TLDefinition, type_ids: Dict[str, int]) -> str
             else:
                 lines.append(f"        if {ff} & (1 << {arg.flag_index}):")
                 lines.append(f"            {pn} = {_read_expr(arg)}")
-                lines.append(f"        else:")
+                lines.append("        else:")
                 lines.append(f"            {pn} = None")
         else:
             lines.append(f"        {pn} = {_read_expr(arg)}")
@@ -427,7 +431,9 @@ def _append_slots(lines: List[str], defn: TLDefinition) -> None:
         lines.append("    __slots__ = ()")
 
 
-def _append_init(lines: List[str], init_params: List[str], init_body: List[str]) -> None:
+def _append_init(
+    lines: List[str], init_params: List[str], init_body: List[str]
+) -> None:
     if len(init_params) > 1:
         lines.append(f"    def __init__({', '.join(init_params)}):")
         lines.extend(init_body or ["        pass"])
@@ -436,7 +442,9 @@ def _append_init(lines: List[str], init_params: List[str], init_body: List[str])
         lines.append("        pass")
 
 
-def _write_package_init(target_dir: str, package: str, groups: Dict[str, List[TLDefinition]]) -> None:
+def _write_package_init(
+    target_dir: str, package: str, groups: Dict[str, List[TLDefinition]]
+) -> None:
     """Import submodules to register all TL constructors without 1600+ import lines."""
     lines = [
         f'"""TL {package.split(".")[-1]} package — auto-generated."""\n',
@@ -459,7 +467,9 @@ def _write_types_init(types_dir: str, groups: Dict[str, List[TLDefinition]]) -> 
     _write_package_init(types_dir, "sent.tl.types", groups)
 
 
-def _write_functions_init(functions_dir: str, groups: Dict[str, List[TLDefinition]]) -> None:
+def _write_functions_init(
+    functions_dir: str, groups: Dict[str, List[TLDefinition]]
+) -> None:
     """Lazy-load function submodules on first attribute access."""
     lines = [
         '"""TL functions package — auto-generated."""\n',
@@ -487,14 +497,17 @@ def _write_functions_init(functions_dir: str, groups: Dict[str, List[TLDefinitio
     lines.append("")
     lines.append("def _ensure_loaded(mod: str) -> None:")
     lines.append('    if mod not in _loaded:')
-    lines.append(f'        importlib.import_module("sent.tl.functions." + mod)')
+    lines.append('        importlib.import_module("sent.tl.functions." + mod)')
     lines.append("        _loaded.add(mod)")
     lines.append("")
     lines.append("")
     lines.append("def __getattr__(name: str):")
     lines.append("    mod = _LOOKUP.get(name)")
     lines.append("    if mod is None:")
-    lines.append('        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")')
+    lines.append(
+        '        raise AttributeError('
+        'f"module {__name__!r} has no attribute {name!r}")'
+    )
     lines.append("    _ensure_loaded(mod)")
     lines.append('    module = importlib.import_module("sent.tl.functions." + mod)')
     lines.append("    obj = getattr(module, name)")

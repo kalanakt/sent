@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 from sent.errors.common import (
     PhoneCodeExpiredError,
     PhoneCodeInvalidError,
     RPCError,
     SessionPasswordNeededError,
-    rpc_message_to_error,
 )
 
 
@@ -125,7 +123,10 @@ class AuthMethods:
         email: str = None,
     ):
         from sent.crypto.srp import compute_check
-        from sent.tl.functions.account import AccountGetPassword, AccountUpdatePasswordSettings
+        from sent.tl.functions.account import (
+            AccountGetPassword,
+            AccountUpdatePasswordSettings,
+        )
         from sent.tl.types.account import AccountPasswordInputSettings
         from sent.tl.types.all import InputCheckPasswordSRP
 

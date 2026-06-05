@@ -52,6 +52,17 @@ Tracker = "https://github.com/kalanakt/sent/issues"
 where = ["."]
 include = ["sent*"]
 
+[tool.ruff]
+line-length = 88
+exclude = [
+    "sent/tl/types",
+    "sent/tl/functions",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501", "F403"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["test"]

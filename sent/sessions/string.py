@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import base64
 import struct
-import time
 from typing import Any, Dict, Optional, Tuple
 
 from sent.network.dc import DEFAULT_DCS, get_dc

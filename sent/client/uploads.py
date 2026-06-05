@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import os
-from typing import BinaryIO, Optional, Union
+from typing import BinaryIO, Union
 
 
 class UploadMethods:
@@ -28,7 +28,7 @@ class UploadMethods:
         return await self._upload_file_obj(file, file_name or "file", part_size_kb)
 
     async def _upload_file_obj(self, file_obj, file_name: str, part_size_kb: float):
-        from sent.tl.functions.upload import UploadSaveFilePart, UploadSaveBigFilePart
+        from sent.tl.functions.upload import UploadSaveBigFilePart, UploadSaveFilePart
 
         file_obj.seek(0, 2)
         file_size = file_obj.tell()
@@ -61,8 +61,6 @@ class UploadMethods:
                         bytes=data,
                     )
                 )
-            if progress_callback:
-                progress_callback(min((part_index + 1) * part_size, file_size), file_size)
 
         from sent.tl.types.all import InputFile, InputFileBig
 
@@ -91,7 +89,10 @@ class UploadMethods:
         uploaded = await self.upload_file(file)
 
         from sent.tl.functions.messages import MessagesSendMedia
-        from sent.tl.types.all import InputMediaUploadedDocument, InputMediaUploadedPhoto
+        from sent.tl.types.all import (
+            InputMediaUploadedDocument,
+            InputMediaUploadedPhoto,
+        )
 
         if force_document:
             media = InputMediaUploadedDocument(

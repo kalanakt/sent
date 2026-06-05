@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 
 class Session(abc.ABC):
