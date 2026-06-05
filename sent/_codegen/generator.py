@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Dict, List, Set
+from typing import Dict, List
 
 from sent._codegen.parser import CORE_TYPES, TLDefinition, TLParameter
 

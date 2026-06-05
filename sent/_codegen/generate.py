@@ -8,11 +8,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from sent._codegen.parser import parse_all_schemas
-from sent._codegen.generator import generate_all
-
 
 def main():
+    from sent._codegen.generator import generate_all
+    from sent._codegen.parser import parse_all_schemas
     data_dir = os.path.join(os.path.dirname(__file__), "data")
     mtproto_tl = os.path.join(data_dir, "mtproto.tl")
     api_tl = os.path.join(data_dir, "api.tl")
