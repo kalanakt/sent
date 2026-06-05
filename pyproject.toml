@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sent"
+version = "1.0.0"
+description = "Async MTProto client library for Telegram user accounts and bots"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [{name = "kalanakt", email = "e19198@eng.pdn.ac.lk"}]
+keywords = ["telegram", "mtproto", "async", "client", "bot"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Communications :: Chat",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: AsyncIO",
+]
+dependencies = ["pyaes>=1.6.1"]
+
+[project.optional-dependencies]
+fast = ["cryptg>=0.4.0"]
+crypto = ["pycryptodome>=3.20.0"]
+pure = ["pyaes>=1.6.1"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.21.0"]
+
+[dependency-groups]
+dev = [
+    {include-group = "test"},
+]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "pyaes>=1.6.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/kalanakt/sent"
+Documentation = "https://github.com/kalanakt/sent"
+Source = "https://github.com/kalanakt/sent"
+Tracker = "https://github.com/kalanakt/sent/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sent*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test"]

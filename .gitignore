@@ -92,7 +92,12 @@ Pipfile.lock
 
 # Virtualenv
 venv/
+.venv/
+.test-venv/
 ENV/
+
+# uv
+uv.lock
 
 # Spyder project settings
 .spyderproject
