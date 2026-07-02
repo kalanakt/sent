@@ -21,6 +21,14 @@ class UserMethods:
         return user
 
     async def get_entity(self, entity):
+        """Resolve an entity to its full TL object (User, Channel, Chat, etc.).
+
+        Args:
+            entity: Username, numeric ID, ``"me"``, or TL peer object.
+
+        Returns:
+            The resolved TL entity.
+        """
         return await self.get_input_entity(entity, raw=True)
 
     async def get_entities(self, entities):

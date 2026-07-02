@@ -25,6 +25,23 @@ class MessageMethods:
         schedule=None,
         comment_to: int = None,
     ):
+        """Send a text message to a user, chat, or channel.
+
+        Args:
+            entity: Username, ID, or TL peer to send to.
+            message: Text content of the message.
+            reply_to: Message ID to reply to.
+            parse_mode: Markdown parse mode for formatting.
+            link_preview: Whether to show link previews.
+            file: Optional file path or bytes to attach.
+            buttons: Inline or reply keyboard markup.
+            silent: Send without notification sound.
+            schedule: Unix timestamp to schedule the message.
+            comment_to: Post ID to comment on in a channel discussion.
+
+        Returns:
+            The sent Message object.
+        """
         entity = await self.get_input_entity(entity)
         if parse_mode:
             from sent.client.buttons import parse_markdown

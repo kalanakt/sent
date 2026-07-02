@@ -96,6 +96,7 @@ class TelegramBaseClient:
         return dc_id, ip, port
 
     async def connect(self) -> None:
+        """Connect to Telegram, authenticate if needed, and start the sender."""
         if self._sender and self._sender.connected:
             return
 

@@ -33,5 +33,9 @@ class TelegramClient(
         UpdateMethods.__init_update_handlers(self)
 
     async def start(self, *args, **kwargs):
+        """Connect and authenticate (interactive, bot token, or programmatic).
+
+        Calls ``connect()`` then delegates to ``AuthMethods.start`` for login.
+        """
         await self.connect()
         return await AuthMethods.start(self, *args, **kwargs)
