@@ -1,0 +1,51 @@
+# User account
+
+This guide shows how to connect a Telegram user account with **sent**.
+
+## Example
+
+```python
+import asyncio
+import os
+
+from sent import TelegramClient, events
+
+API_ID = int(os.environ["TELEGRAM_API_ID"])
+API_HASH = os.environ["TELEGRAM_API_HASH"]
+
+
+async def main():
+    client = TelegramClient("my_account", API_ID, API_HASH)
+
+    @client.on(events.NewMessage(incoming=True))
+    async def handler(event):
+        await event.reply("Hello!")
+
+    await client.start()  # prompts for phone, code, and 2FA when needed
+    me = await client.get_me()
+    print(f"Logged in as {me.first_name}")
+    await client.run_until_disconnected()
+
+
+asyncio.run(main())
+```
+
+## First login
+
+On the first run, `client.start()` interactively prompts for:
+
+1. Phone number
+2. Login code (sent to Telegram)
+3. Two-factor password (if SRP 2FA is enabled)
+
+The session is saved under the name you pass to `TelegramClient` (here, `"my_account"`), so later runs skip the login flow.
+
+## Full example
+
+See [`examples/user_bot.py`](https://github.com/kalanakt/sent/blob/main/examples/user_bot.py) for a fuller user-account example.
+
+## API reference
+
+- [`TelegramClient.start()`](/api/client/connection)
+- [Authentication guide](/guides/authentication)
+- [Authentication methods](/api/client/auth)

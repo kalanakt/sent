@@ -1,0 +1,32 @@
+---
+layout: blank
+description: Async MTProto client library for Telegram user accounts and bots.
+content:
+  width: full
+showAskAi: false
+showBanner: false
+showLogo: false
+showTopNav: false
+showSidebar: false
+showFeedback: false
+---
+
+import { Landing } from '../components/Landing'
+
+<Landing
+  docsHref="/introduction"
+  docsOrigin="https://sentdoc.vercel.app"
+  packageName="sent"
+  title={
+    <>
+      Minimal Telegram client
+      <br />
+      for Agents &amp; Humans.
+    </>
+  }
+  description="sent is an async MTProto library for Telegram bots and user accounts. Docs that agents can consume and humans can navigate."
+  logoSuffix={
+    <span className="vocs:text-[13px] vocs:text-muted">by kalanakt</span>
+  }
+  agentPrompt="Read {url}/ and build a Telegram bot using sent. Follow {url}/guides/bot and {url}/guides/events. Use {url}/api/client for method signatures."
+/>

@@ -1,0 +1,169 @@
+# Build with AI
+
+**sent** docs are written for both humans and AI agents. Point your coding assistant at these pages to scaffold bots, handlers, and integrations without guessing the API.
+
+## Quick prompt
+
+You can get started by asking your AI agent to read the docs — same pattern as [Vocs](https://vocs.dev):
+
+### Root page
+
+```
+Read https://sentdoc.vercel.app/ and build a Telegram bot using sent.
+```
+
+### Root page + full index
+
+```
+Read https://sentdoc.vercel.app/llms-full.txt and build a Telegram bot using sent.
+Follow https://sentdoc.vercel.app/guides/bot and https://sentdoc.vercel.app/guides/events.
+Use https://sentdoc.vercel.app/api/client for method signatures.
+```
+
+### AI guide
+
+```
+Read https://sentdoc.vercel.app/guides/ai and build a Telegram bot using sent.
+Follow https://sentdoc.vercel.app/guides/bot and https://sentdoc.vercel.app/guides/events.
+Use the API reference at https://sentdoc.vercel.app/api/client.
+```
+
+### AI guide (repo file)
+
+If the agent has the repository but not network access to the docs site:
+
+```
+Read https://github.com/kalanakt/sent/blob/main/docs/src/pages/guides/ai.mdx and build a Telegram bot using sent.
+
+Follow the Bot guide, Events guide, and API reference linked in that page.
+Use pip install sent, asyncio, and environment variables for credentials.
+```
+
+## Docs for agents
+
+This site is built with [Vocs](https://vocs.dev), which exposes machine-readable indexes:
+
+| URL | Purpose |
+|-----|---------|
+| [https://sentdoc.vercel.app/llms.txt](https://sentdoc.vercel.app/llms.txt) | Concise index of all doc pages |
+| [https://sentdoc.vercel.app/llms-full.txt](https://sentdoc.vercel.app/llms-full.txt) | Full documentation in one Markdown file |
+
+When working in the repo, agents can also read generated API reference under [`docs/src/pages/api/`](https://github.com/kalanakt/sent/tree/main/docs/src/pages/api) and guides under [`docs/src/pages/guides/`](https://github.com/kalanakt/sent/tree/main/docs/src/pages/guides).
+
+## Recommended reading order (bot)
+
+1. [Installation](/getting-started) — install **sent**, set `api_id` / `api_hash` / bot token
+2. [Bot guide](/guides/bot) — minimal echo bot
+3. [Authentication](/guides/authentication) — bot token login and sessions
+4. [Events](/guides/events) — `@client.on(events.NewMessage)` and filters
+5. [Inline Keyboards](/guides/keyboards) — buttons and callbacks (optional)
+6. [Error Handling](/guides/error-handling) — `FloodWaitError` and retries
+7. [API Reference — TelegramClient](/api/client) — full method lookup
+
+## Quick prompts
+
+Copy one of these into Cursor, Claude Code, or your preferred agent.
+
+### Build a new bot from scratch
+
+```
+Read the sent documentation and build a Telegram bot using the sent library.
+
+Start with:
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/getting-started.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/guides/bot.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/guides/events.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/api/client/messages.mdx
+
+Use environment variables for TELEGRAM_API_ID, TELEGRAM_API_HASH, and TELEGRAM_BOT_TOKEN.
+Implement an echo bot first, then add a /start command handler.
+```
+
+### Add inline keyboard callbacks
+
+```
+Read the sent docs and add inline keyboard buttons to my bot.
+
+Guides:
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/guides/keyboards.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/guides/events.mdx
+
+API:
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/api/events/callbackquery.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/api/client/bots.mdx
+
+Add Yes/No buttons and handle CallbackQuery events.
+```
+
+### Extend an existing bot
+
+```
+Read the sent API reference and extend my bot to forward media to a channel.
+
+Relevant docs:
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/guides/media.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/api/client/messages.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/api/client/files.mdx
+
+Use send_file and forward_messages. Handle FloodWaitError.
+```
+
+### Explore the full API
+
+```
+Read the sent documentation index and summarize the TelegramClient API.
+
+Use:
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/api/client/index.mdx
+- https://github.com/kalanakt/sent/blob/main/docs/src/pages/api/events/index.mdx
+
+List the main methods for messages, entities, and event handlers with one-line descriptions.
+```
+
+## One-line prompts
+
+Short prompts when your agent already has repo context:
+
+```
+Read https://sentdoc.vercel.app/ and build a Telegram bot using sent.
+```
+
+```
+Read docs/src/pages/guides/bot.mdx and docs/src/pages/guides/events.mdx, then build an echo bot with sent.
+```
+
+```
+Read docs/src/pages/api/client/messages.mdx and add send_message with inline buttons to my bot.
+```
+
+```
+Read docs/src/pages/guides/error-handling.mdx and wrap my sent client calls with FloodWaitError handling.
+```
+
+## What to tell the agent
+
+Include these constraints for better results:
+
+- **Library:** `sent` (async MTProto client), not python-telegram-bot or Telethon
+- **Python:** 3.8+, use `asyncio` and `await client.start(bot_token=...)`
+- **Credentials:** never hardcode tokens — use environment variables
+- **Examples:** see [examples/echo_bot.py](https://github.com/kalanakt/sent/blob/main/examples/echo_bot.py) in the repo
+
+## Run docs locally
+
+For editing docs or testing changes before deploy:
+
+```bash
+cd docs
+bun install
+bun run dev    # http://localhost:5173
+```
+
+Use `https://sentdoc.vercel.app/llms-full.txt` in prompts for the published site, or swap the host to `http://localhost:5173` when testing against your local dev server.
+
+## See also
+
+- [Bot guide](/guides/bot)
+- [Events guide](/guides/events)
+- [API Reference](/api/client)
+- [Development](/development) — contributing and regenerating docs

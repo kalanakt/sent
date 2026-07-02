@@ -1,0 +1,48 @@
+# Introduction
+
+**sent** is an async MTProto client library for Telegram. It speaks the raw Telegram protocol and supports both user accounts and bots with an event-driven, developer-friendly API.
+
+## For AI agents
+
+Copy this prompt to get started:
+
+```
+Read https://sentdoc.vercel.app/ and build a Telegram bot using sent.
+```
+
+With the full doc index:
+
+```
+Read https://sentdoc.vercel.app/llms-full.txt and build a Telegram bot using sent.
+Follow the guides at https://sentdoc.vercel.app/guides/bot and https://sentdoc.vercel.app/guides/events.
+```
+
+More prompts and task-specific examples: [Build with AI](/guides/ai).
+
+## Features
+
+- **Async MTProto 2.0** — encryption, sessions, RPC with `RpcResult` / `MsgContainer` handling
+- **User accounts and bots** — phone + code login, SRP 2FA, bot token, QR login
+- **Event system** — `NewMessage`, `MessageDeleted`, `MessageRead`, `CallbackQuery`, `ChatAction`, `UserUpdate`, `Album`
+- **Friendly API** — `send_message`, `send_file`, `get_dialogs`, `iter_messages`, `conversation()`
+- **TL layer 225** — auto-generated from the latest Telegram schema
+- **Session storage** — SQLite (with entity cache), StringSession, or in-memory
+- **Transport** — TCP abridged / intermediate / full, SOCKS5 proxy support
+
+## Documentation
+
+- [Build with AI](/guides/ai)
+- [Getting Started](/getting-started)
+- [API Reference — TelegramClient](/api/client)
+- [Events](/api/events)
+- [TL Reference](/tl)
+
+## Project links
+
+- **Source:** https://github.com/kalanakt/sent
+- **Issues:** https://github.com/kalanakt/sent/issues
+- **PyPI:** https://pypi.org/project/sent/
+
+## License
+
+MIT — see [LICENSE](https://github.com/kalanakt/sent/blob/main/LICENSE).

@@ -1,0 +1,42 @@
+# Inline Keyboards
+
+Build reply and inline keyboards with [`Button`](/api/helpers/button).
+
+## Inline buttons
+
+```python
+from sent.client.buttons import Button
+
+buttons = Button.build([
+    [Button.inline("Yes", data=b"yes"), Button.inline("No", data=b"no")],
+    [Button.inline("Docs", url="https://github.com/kalanakt/sent")],
+])
+await client.send_message(chat, "Confirm?", buttons=buttons)
+```
+
+## Handle callbacks
+
+```python
+@client.on(events.CallbackQuery)
+async def callback(event):
+    await event.answer("You clicked!")
+    if event.data == b"yes":
+        await event.edit("Confirmed.")
+```
+
+See [CallbackQuery](/api/events/callbackquery) and [`answer_callback_query()`](/api/client/bots#answer_callback_query).
+
+## Click a button programmatically
+
+```python
+await client.click(message, 0)  # first button
+```
+
+## Reply keyboard
+
+```python
+buttons = Button.build([
+    [Button.text("Hello"), Button.request_phone("Share phone")],
+], inline=False)
+await client.send_message(chat, "Choose:", buttons=buttons)
+```

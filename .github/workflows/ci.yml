@@ -34,3 +34,18 @@ jobs:
         run: pip install ruff
       - name: Ruff
         run: ruff check sent test
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: oven-sh/setup-bun@v2
+      - name: Install uv
+        run: pip install uv
+      - name: Regenerate docs and check for drift
+        run: cd docs && bun install && bun run generate-docs && git diff --exit-code
+      - name: Build docs
+        run: cd docs && bun run build

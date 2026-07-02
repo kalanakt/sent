@@ -1,0 +1,58 @@
+# Installation
+
+## PyPI
+
+```bash
+pip install sent
+```
+
+Optional extras for faster cryptography:
+
+```bash
+pip install sent[fast]    # cryptg (recommended for production)
+pip install sent[crypto]  # pycryptodome fallback
+```
+
+Or with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv add sent
+```
+
+## Local development
+
+```bash
+git clone https://github.com/kalanakt/sent.git
+cd sent
+uv sync --all-extras
+```
+
+Or with pip:
+
+```bash
+pip install -e ".[dev]"
+```
+
+## Telegram API credentials
+
+Before connecting, get your `api_id` and `api_hash` from [my.telegram.org](https://my.telegram.org).
+
+Set them as environment variables:
+
+```bash
+export TELEGRAM_API_ID=12345678
+export TELEGRAM_API_HASH=your_api_hash
+```
+
+For bots, you also need a bot token from [@BotFather](https://t.me/BotFather):
+
+```bash
+export TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+```
+
+## Next steps
+
+- [Build with AI](/guides/ai) — root page and task prompts for coding assistants
+- [Build a bot](/guides/bot)
+- [Connect a user account](/guides/user-account)
+- [Use the conversation helper](/guides/conversation)

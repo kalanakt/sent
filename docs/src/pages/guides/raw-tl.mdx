@@ -1,0 +1,62 @@
+# Raw TL RPC
+
+Use raw TL when you need API methods not yet wrapped by high-level client methods, or custom flag combinations.
+
+## Pattern
+
+```python
+from sent import TelegramClient, functions
+
+peer = await client.get_input_entity("channel_username")
+
+result = await client(
+    functions.channels.GetParticipants(
+        channel=peer,
+        filter=functions.types.ChannelParticipantsRecent(),
+        offset=0,
+        limit=100,
+        hash=0,
+    )
+)
+```
+
+## Imports
+
+```python
+from sent import types, functions
+
+# Namespace imports
+from sent.tl.functions.messages import MessagesSearch
+from sent.tl.types.messages import Found
+```
+
+Browse the full catalog:
+
+- [TL Types](/tl/types/messages)
+- [TL Functions](/tl/functions/messages)
+- [TL Overview](/tl)
+
+## Responses
+
+RPC results are TL objects. Use `isinstance` or attribute access:
+
+```python
+from sent.tl.types.messages import Messages
+
+if isinstance(result, Messages):
+    for msg in result.messages:
+        print(msg.message)
+```
+
+## Underlying TL for client methods
+
+Many client methods wrap TL RPC calls. The API reference links to the underlying TL where applicable — for example [`send_message`](/api/client/messages#send_message) uses `MessagesSendMessage`.
+
+## Regenerating TL
+
+After updating the schema:
+
+```bash
+uv run python -m sent._codegen.generate
+cd docs && bun run generate-docs
+```

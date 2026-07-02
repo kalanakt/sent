@@ -51,6 +51,35 @@ python -m sent._codegen.generate
 
 Commit the regenerated output together with any schema changes.
 
+## Documentation site
+
+After API or TL changes, regenerate and **commit** the MDX (Vercel does not run the generator):
+
+```bash
+uv run python -m sent._codegen.generate   # if TL schema changed
+cd docs && bun run generate-docs
+```
+
+The generator writes to `docs/src/pages/api/` and `docs/src/pages/tl/`. **Commit the updated MDX files** with your changes.
+
+Vercel and `bun run build` only compile what is already in the repo — they do not run the Python generator.
+
+### Local docs dev
+
+```bash
+cd docs
+bun install
+bun run dev    # http://localhost:5173
+```
+
+### Production build
+
+```bash
+cd docs
+bun run build  # output → docs/dist/
+bun run preview
+```
+
 ## Pull request guidelines
 
 1. Fork the repository and create a feature branch from `main`.

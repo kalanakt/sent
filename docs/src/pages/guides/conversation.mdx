@@ -1,0 +1,25 @@
+# Conversation
+
+The `conversation()` helper lets you send a message and wait for a reply in a single async context — useful for simple interactive flows.
+
+## Example
+
+```python
+async with client.conversation("username") as conv:
+    await conv.send_message("What's your name?")
+    response = await conv.get_response()
+    print(response.text)
+```
+
+## How it works
+
+- Opens a scoped conversation with the given user or chat.
+- `send_message()` sends from within that context.
+- `get_response()` waits for the next incoming message in the conversation.
+
+Use this for bots or user accounts when you need a short request/response exchange without wiring up event handlers manually.
+
+## API reference
+
+- [`conversation()`](/api/client/messages)
+- [Conversation](/api/helpers/conversation)

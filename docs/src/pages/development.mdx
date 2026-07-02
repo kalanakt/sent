@@ -1,0 +1,89 @@
+# Development
+
+## Setup
+
+```bash
+git clone https://github.com/kalanakt/sent.git
+cd sent
+uv sync --all-extras
+```
+
+Or with pip:
+
+```bash
+pip install -e ".[dev]"
+```
+
+## Running tests
+
+```bash
+uv sync --group test
+uv run pytest test/ -v
+```
+
+Tests run automatically in CI on Python 3.10, 3.11, and 3.12 for every push and pull request to `main`.
+
+## Linting
+
+```bash
+ruff check sent test
+```
+
+CI runs the same check (configured in `pyproject.toml`, excluding auto-generated TL modules).
+
+## Benchmarks
+
+```bash
+uv run python bench/run.py
+```
+
+## Regenerating TL types
+
+TL types and RPC functions under `sent/tl/` are **auto-generated**. Do not edit them by hand.
+
+After updating schema files in `sent/_codegen/data/`:
+
+```bash
+uv run python -m sent._codegen.generate
+```
+
+Commit the regenerated output together with any schema changes.
+
+## Documentation site
+
+After API or TL changes, regenerate and **commit** the MDX (Vercel does not run the generator):
+
+```bash
+uv run python -m sent._codegen.generate   # if TL schema changed
+cd docs && bun run generate-docs
+cd docs && bun install && bun run dev
+```
+
+Vercel and `bun run build` only compile what is already in the repo — they do not run the Python generator.
+
+### Production build
+
+```bash
+cd docs
+bun run build  # output → docs/dist/
+bun run preview
+```
+
+## Project structure
+
+| Path | Purpose |
+|------|---------|
+| `sent/client/` | High-level `TelegramClient` API |
+| `sent/network/` | MTProto transport and sender |
+| `sent/crypto/` | AES, auth key, SRP |
+| `sent/tl/` | Generated TL types and functions |
+| `sent/_codegen/` | TL schema parser and code generator |
+| `sent/events/` | Event handlers |
+| `sent/sessions/` | Session persistence |
+| `examples/` | Runnable bot and user-account examples |
+| `test/` | Unit tests |
+| `bench/` | Performance benchmarks |
+
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/kalanakt/sent/blob/main/CONTRIBUTING.md) for pull request guidelines and release instructions.

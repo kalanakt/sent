@@ -1,0 +1,68 @@
+# Events
+
+**sent** uses an event-driven model. Register handlers and run the update loop until disconnected.
+
+## Basic pattern
+
+```python
+from sent import TelegramClient, events
+
+@client.on(events.NewMessage)
+async def handler(event):
+    print(event.text)
+    await event.reply("Got it!")
+
+await client.start()
+await client.run_until_disconnected()
+```
+
+## Filters
+
+All event builders accept filters from [`EventBuilder`](/api/events):
+
+| Filter | Description |
+|--------|-------------|
+| `incoming=True` | Only messages you receive |
+| `outgoing=True` | Only messages you send |
+| `pattern=r"hello"` | Regex on message text |
+| `chats=[...]` | Limit to specific chats |
+| `from_users=[...]` | Limit to specific senders |
+| `forwards=True/False` | Forwarded messages only |
+
+```python
+@client.on(events.NewMessage(incoming=True, pattern=r"^/start"))
+async def cmd(event):
+    await event.reply("Welcome!")
+```
+
+## Event types
+
+| Event | When |
+|-------|------|
+| [NewMessage](/api/events/newmessage) | New message sent or received |
+| [MessageEdited](/api/events/messageedited) | Message edited |
+| [MessageDeleted](/api/events/messagedeleted) | Messages deleted |
+| [CallbackQuery](/api/events/callbackquery) | Inline button pressed |
+| [InlineQuery](/api/events/inlinequery) | Inline query to bot |
+| [ChatAction](/api/events/chataction) | Join, leave, title change |
+| [UserUpdate](/api/events/userupdate) | Status or profile change |
+| [Album](/api/events/album) | Grouped media album |
+| [Raw](/api/events/raw) | Unfiltered TL update |
+
+## Programmatic registration
+
+```python
+async def my_handler(event):
+    ...
+
+client.add_event_handler(my_handler, events.NewMessage)
+client.remove_event_handler(my_handler)
+```
+
+## Catch up after downtime
+
+```python
+await client.catch_up()
+```
+
+Fetches missed updates via `UpdatesGetDifference`.
