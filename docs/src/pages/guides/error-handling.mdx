@@ -1,0 +1,58 @@
+# Error Handling
+
+**sent** raises typed exceptions for auth failures, rate limits, and Telegram RPC errors.
+
+## Exception hierarchy
+
+See the full [Errors API reference](/api/errors). Common exceptions:
+
+| Exception | When |
+|-----------|------|
+| `FloodWaitError` | Rate limited — sleep `e.seconds` |
+| `SessionPasswordNeededError` | 2FA password required |
+| `PhoneCodeInvalidError` | Wrong login code |
+| `ChatWriteForbiddenError` | Cannot write to chat |
+| `ChannelPrivateError` | Channel is private or banned |
+
+## Flood waits
+
+```python
+from sent.errors import FloodWaitError
+import asyncio
+
+try:
+    await client.send_message(chat, text)
+except FloodWaitError as e:
+    await asyncio.sleep(e.seconds)
+    await client.send_message(chat, text)
+```
+
+Auto-sleep for short waits by setting `flood_sleep_threshold` on the client (default 60 seconds):
+
+```python
+TelegramClient("session", API_ID, API_HASH, flood_sleep_threshold=60)
+```
+
+## RPC errors
+
+All Telegram RPC failures raise `RPCError` (or a subclass) with `.code` and `.message`:
+
+```python
+from sent.errors import RPCError
+
+try:
+    await client.send_message(chat, text)
+except RPCError as e:
+    print(f"Error {e.code}: {e.message}")
+```
+
+## Auth errors
+
+```python
+from sent.errors import AuthKeyError, SessionPasswordNeededError
+
+try:
+    await client.sign_in(phone, code)
+except SessionPasswordNeededError as e:
+    await client.sign_in(phone, code, password="2fa_password")
+```

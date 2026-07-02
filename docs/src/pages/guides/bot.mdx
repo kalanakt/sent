@@ -1,0 +1,48 @@
+# Bot
+
+This guide walks through a minimal echo bot using **sent**.
+
+## Example
+
+```python
+import asyncio
+import os
+
+from sent import TelegramClient, events
+
+API_ID = int(os.environ["TELEGRAM_API_ID"])
+API_HASH = os.environ["TELEGRAM_API_HASH"]
+BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+
+
+async def main():
+    client = TelegramClient("echo_bot", API_ID, API_HASH)
+
+    @client.on(events.NewMessage)
+    async def handler(event):
+        await event.reply(event.text)
+
+    await client.start(bot_token=BOT_TOKEN)
+    await client.run_until_disconnected()
+
+
+asyncio.run(main())
+```
+
+## Run it
+
+1. Set `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and `TELEGRAM_BOT_TOKEN`.
+2. Save the script and run it with Python 3.8+.
+3. Send a message to your bot — it should echo the text back.
+
+## Full example
+
+See [`examples/echo_bot.py`](https://github.com/kalanakt/sent/blob/main/examples/echo_bot.py) in the repository for a complete echo bot.
+
+Building with an AI assistant? See the [Build with AI](/guides/ai) guide for copy-paste prompts.
+
+## API reference
+
+- [`TelegramClient.start()`](/api/client/connection)
+- [`events.NewMessage`](/api/events/newmessage)
+- [Bot methods](/api/client/bots)

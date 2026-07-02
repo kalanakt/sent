@@ -1,0 +1,59 @@
+# TL Reference
+
+**sent** implements Telegram's MTProto layer 225. The TL (Type Language) layer provides typed constructors for every Telegram API object and RPC method.
+
+## Imports
+
+```python
+from sent import types, functions
+
+# Or import from namespace modules directly:
+from sent.tl.types.messages import Message
+from sent.tl.functions.messages import MessagesSendMessage
+```
+
+## Raw RPC
+
+Use `TelegramClient` as a callable to invoke any TL request:
+
+```python
+from sent import TelegramClient, functions
+
+async with TelegramClient("session", API_ID, API_HASH) as client:
+    await client.start()
+    peer = await client.get_input_entity("username")
+    result = await client(
+        functions.messages.MessagesGetHistory(
+            peer=peer,
+            offset_id=0,
+            offset_date=0,
+            add_offset=0,
+            limit=10,
+            max_id=0,
+            min_id=0,
+            hash=0,
+        )
+    )
+```
+
+## When to use raw TL
+
+| Use high-level client methods | Use raw TL |
+|-------------------------------|------------|
+| Sending messages, files, dialogs | New or niche API methods not wrapped yet |
+| Entity resolution | Custom flag combinations on RPC calls |
+| Most bot and user workflows | Low-level auth or transport debugging |
+
+See the [Raw TL guide](/guides/raw-tl) for patterns and the [Client API](/api/client) for wrapped methods.
+
+## Reference sections
+
+- **[Types](/tl/types/messages)** — TL constructors returned by Telegram (messages, users, channels, …)
+- **[Functions](/tl/functions/messages)** — TL RPC requests you pass to `await client(...)`
+
+Both are auto-generated from the Telegram schema. After updating `sent/_codegen/data/*.tl`, regenerate TL code and docs:
+
+```bash
+uv run python -m sent._codegen.generate
+cd docs && bun run generate-docs
+```

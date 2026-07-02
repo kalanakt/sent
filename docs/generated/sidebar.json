@@ -1,0 +1,329 @@
+{
+  "apiReference": {
+    "text": "API Reference",
+    "items": [
+      {
+        "text": "TelegramClient",
+        "items": [
+          {
+            "text": "Overview",
+            "link": "/api/client"
+          },
+          {
+            "text": "Connection",
+            "link": "/api/client/connection"
+          },
+          {
+            "text": "Authentication",
+            "link": "/api/client/auth"
+          },
+          {
+            "text": "Messages",
+            "link": "/api/client/messages"
+          },
+          {
+            "text": "Files",
+            "link": "/api/client/files"
+          },
+          {
+            "text": "Users",
+            "link": "/api/client/users"
+          },
+          {
+            "text": "Chats",
+            "link": "/api/client/chats"
+          },
+          {
+            "text": "Dialogs",
+            "link": "/api/client/dialogs"
+          },
+          {
+            "text": "Bots",
+            "link": "/api/client/bots"
+          },
+          {
+            "text": "Updates & Events",
+            "link": "/api/client/updates"
+          }
+        ]
+      },
+      {
+        "text": "Events",
+        "items": [
+          {
+            "text": "Overview",
+            "link": "/api/events"
+          },
+          {
+            "text": "NewMessage",
+            "link": "/api/events/newmessage"
+          },
+          {
+            "text": "MessageEdited",
+            "link": "/api/events/messageedited"
+          },
+          {
+            "text": "MessageDeleted",
+            "link": "/api/events/messagedeleted"
+          },
+          {
+            "text": "MessageRead",
+            "link": "/api/events/messageread"
+          },
+          {
+            "text": "CallbackQuery",
+            "link": "/api/events/callbackquery"
+          },
+          {
+            "text": "InlineQuery",
+            "link": "/api/events/inlinequery"
+          },
+          {
+            "text": "ChatAction",
+            "link": "/api/events/chataction"
+          },
+          {
+            "text": "Raw",
+            "link": "/api/events/raw"
+          },
+          {
+            "text": "UserUpdate",
+            "link": "/api/events/userupdate"
+          },
+          {
+            "text": "Album",
+            "link": "/api/events/album"
+          }
+        ]
+      },
+      {
+        "text": "Sessions",
+        "link": "/api/sessions"
+      },
+      {
+        "text": "Errors",
+        "link": "/api/errors"
+      },
+      {
+        "text": "Helpers",
+        "items": [
+          {
+            "text": "Button",
+            "link": "/api/helpers/button"
+          },
+          {
+            "text": "Conversation",
+            "link": "/api/helpers/conversation"
+          }
+        ]
+      }
+    ]
+  },
+  "tlReference": {
+    "text": "TL Reference",
+    "items": [
+      {
+        "text": "Overview",
+        "link": "/tl"
+      },
+      {
+        "text": "Types",
+        "items": [
+          {
+            "text": "account",
+            "link": "/tl/types/account"
+          },
+          {
+            "text": "aicompose",
+            "link": "/tl/types/aicompose"
+          },
+          {
+            "text": "auth",
+            "link": "/tl/types/auth"
+          },
+          {
+            "text": "bots",
+            "link": "/tl/types/bots"
+          },
+          {
+            "text": "channels",
+            "link": "/tl/types/channels"
+          },
+          {
+            "text": "chatlists",
+            "link": "/tl/types/chatlists"
+          },
+          {
+            "text": "contacts",
+            "link": "/tl/types/contacts"
+          },
+          {
+            "text": "fragment",
+            "link": "/tl/types/fragment"
+          },
+          {
+            "text": "help",
+            "link": "/tl/types/help"
+          },
+          {
+            "text": "messages",
+            "link": "/tl/types/messages"
+          },
+          {
+            "text": "mtproto (core)",
+            "link": "/tl/types/mtproto"
+          },
+          {
+            "text": "payments",
+            "link": "/tl/types/payments"
+          },
+          {
+            "text": "phone",
+            "link": "/tl/types/phone"
+          },
+          {
+            "text": "photos",
+            "link": "/tl/types/photos"
+          },
+          {
+            "text": "premium",
+            "link": "/tl/types/premium"
+          },
+          {
+            "text": "smsjobs",
+            "link": "/tl/types/smsjobs"
+          },
+          {
+            "text": "stats",
+            "link": "/tl/types/stats"
+          },
+          {
+            "text": "stickers",
+            "link": "/tl/types/stickers"
+          },
+          {
+            "text": "storage",
+            "link": "/tl/types/storage"
+          },
+          {
+            "text": "stories",
+            "link": "/tl/types/stories"
+          },
+          {
+            "text": "updates",
+            "link": "/tl/types/updates"
+          },
+          {
+            "text": "upload",
+            "link": "/tl/types/upload"
+          },
+          {
+            "text": "users",
+            "link": "/tl/types/users"
+          }
+        ]
+      },
+      {
+        "text": "Functions",
+        "items": [
+          {
+            "text": "account",
+            "link": "/tl/functions/account"
+          },
+          {
+            "text": "aicompose",
+            "link": "/tl/functions/aicompose"
+          },
+          {
+            "text": "auth",
+            "link": "/tl/functions/auth"
+          },
+          {
+            "text": "bots",
+            "link": "/tl/functions/bots"
+          },
+          {
+            "text": "channels",
+            "link": "/tl/functions/channels"
+          },
+          {
+            "text": "chatlists",
+            "link": "/tl/functions/chatlists"
+          },
+          {
+            "text": "contacts",
+            "link": "/tl/functions/contacts"
+          },
+          {
+            "text": "folders",
+            "link": "/tl/functions/folders"
+          },
+          {
+            "text": "fragment",
+            "link": "/tl/functions/fragment"
+          },
+          {
+            "text": "help",
+            "link": "/tl/functions/help"
+          },
+          {
+            "text": "langpack",
+            "link": "/tl/functions/langpack"
+          },
+          {
+            "text": "messages",
+            "link": "/tl/functions/messages"
+          },
+          {
+            "text": "mtproto",
+            "link": "/tl/functions/mtproto"
+          },
+          {
+            "text": "payments",
+            "link": "/tl/functions/payments"
+          },
+          {
+            "text": "phone",
+            "link": "/tl/functions/phone"
+          },
+          {
+            "text": "photos",
+            "link": "/tl/functions/photos"
+          },
+          {
+            "text": "premium",
+            "link": "/tl/functions/premium"
+          },
+          {
+            "text": "smsjobs",
+            "link": "/tl/functions/smsjobs"
+          },
+          {
+            "text": "stats",
+            "link": "/tl/functions/stats"
+          },
+          {
+            "text": "stickers",
+            "link": "/tl/functions/stickers"
+          },
+          {
+            "text": "stories",
+            "link": "/tl/functions/stories"
+          },
+          {
+            "text": "updates",
+            "link": "/tl/functions/updates"
+          },
+          {
+            "text": "upload",
+            "link": "/tl/functions/upload"
+          },
+          {
+            "text": "users",
+            "link": "/tl/functions/users"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+# Proxy and Transport
+
+Configure connection transport and SOCKS5 proxy when creating the client.
+
+## Connection modes
+
+| Mode | Description |
+|------|-------------|
+| `"abridged"` | Default, compact binary (recommended) |
+| `"intermediate"` | Intermediate framing |
+| `"full"` | Full MTProto framing |
+
+```python
+client = TelegramClient(
+    "session",
+    API_ID,
+    API_HASH,
+    connection="abridged",
+)
+```
+
+## SOCKS5 proxy
+
+```python
+client = TelegramClient(
+    "session",
+    API_ID,
+    API_HASH,
+    proxy=("socks5", "127.0.0.1", 1080),
+)
+```
+
+With authentication:
+
+```python
+proxy=("socks5", "127.0.0.1", 1080, True, "user", "pass")
+```
+
+## IPv6
+
+```python
+client = TelegramClient("session", API_ID, API_HASH, use_ipv6=True)
+```
+
+## Timeouts and retries
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `timeout` | `10` | Connection timeout (seconds) |
+| `request_retries` | `5` | RPC retry count |
+| `raise_last_call_error` | `False` | Re-raise last error after retries |
+
+See [Connection API](/api/client/connection) for all constructor parameters.

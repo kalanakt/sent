@@ -1,0 +1,42 @@
+# Entities and Peers
+
+Telegram identifies chats, users, and channels with numeric IDs and `@username` handles. **sent** resolves these to TL peer objects automatically.
+
+## Accepted entity formats
+
+Pass any of these to methods like `send_message`, `get_entity`, or event filters:
+
+- `@username` — public username
+- Numeric ID — e.g. `123456789` or `-1001234567890` for channels
+- `"me"` — the logged-in user
+- TL objects — `User`, `Channel`, `Chat`, `Peer`, `InputPeer*`
+
+## Resolution methods
+
+| Method | Returns |
+|--------|---------|
+| [`get_entity()`](/api/client/users#get_entity) | Full TL object (`User`, `Channel`, …) |
+| [`get_input_entity()`](/api/client/users#get_input_entity) | `InputPeer*` for RPC calls |
+| [`get_peer_id()`](/api/client/users#get_peer_id) | Numeric ID from a peer object |
+
+## Example
+
+```python
+user = await client.get_entity("durov")
+peer = await client.get_input_entity(user)
+await client.send_message(peer, "Hello!")
+```
+
+## Entity cache
+
+The client caches resolved entities in the session (SQLite or memory) to avoid repeated lookups. Configure cache size with `entity_cache_limit` on construction.
+
+## Event filters
+
+Restrict handlers to specific chats:
+
+```python
+@client.on(events.NewMessage(chats=[123456, "my_channel"]))
+async def handler(event):
+    ...
+```

@@ -1,0 +1,67 @@
+# Authentication
+
+**sent** supports user accounts (phone + code + optional 2FA) and bots (token). Sessions persist between runs.
+
+## Credentials
+
+Get `api_id` and `api_hash` from [my.telegram.org](https://my.telegram.org).
+
+```bash
+export TELEGRAM_API_ID=12345678
+export TELEGRAM_API_HASH=your_api_hash
+```
+
+## Bot login
+
+```python
+await client.start(bot_token=os.environ["TELEGRAM_BOT_TOKEN"])
+```
+
+See the [Bot guide](/guides/bot) and [`start()` API](/api/client/connection#start).
+
+## User account (interactive)
+
+```python
+await client.start()  # prompts for phone, code, and 2FA password if needed
+```
+
+## User account (programmatic)
+
+```python
+await client.send_code_request(phone)
+await client.sign_in(phone, code)
+# If 2FA is enabled:
+await client.sign_in(phone, code, password="your_2fa_password")
+```
+
+See [`send_code_request`](/api/client/auth#send_code_request) and [`sign_in`](/api/client/auth#sign_in).
+
+## Two-factor authentication
+
+If Telegram returns `SessionPasswordNeededError`, call `sign_in` with the `password` argument or use interactive `start()`.
+
+Change 2FA settings with [`edit_2fa()`](/api/client/auth#edit_2fa).
+
+## QR login
+
+```python
+qr = await client.qr_login()
+# Display qr.url or qr.token to the user; wait for scan
+await qr.wait()
+```
+
+## Session storage
+
+| Format | Example | Persistence |
+|--------|---------|-------------|
+| SQLite (default) | `TelegramClient("my_account", ...)` | `my_account.session` file |
+| String | `"1BJWap...base64..."` | Portable string |
+| Memory | `MemorySession()` | Lost on exit |
+
+See [Sessions API](/api/sessions).
+
+## Log out
+
+```python
+await client.log_out()
+```
