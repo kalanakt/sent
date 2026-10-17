@@ -4,7 +4,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/sent.svg)](https://pypi.org/project/sent/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/kalanakt/sent/actions/workflows/ci.yml/badge.svg)](https://github.com/kalanakt/sent/actions/workflows/ci.yml)
-![PyPI Downloads](https://img.shields.io/pypi/:dm/:sent)
+![PyPI Downloads](https://img.shields.io/pypi/dm/sent)
 
 **sent** is an async MTProto client library for Telegram. It speaks the raw Telegram protocol and supports both user accounts and bots with an event-driven, developer-friendly API.
 
